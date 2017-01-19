@@ -153,7 +153,6 @@ flash_write (char *src, ulong addr, ulong cnt)
 	if (!info_first || !info_last) {
 		return (ERR_INVAL);
 	}
-
 	for (info = info_first; info <= info_last; ++info) {
 		ulong b_end = info->start[0] + info->size;	/* bank end addr */
 		short s_end = info->sector_count - 1;

@@ -171,7 +171,7 @@ TftpSend (void)
 	NetSendUDPPacket(NetServerEther, NetServerIP, TftpServerPort, TftpOurPort, len);
 }
 
-
+extern char tftp_file;
 static void
 TftpHandler (uchar * pkt, unsigned dest, unsigned src, unsigned len)
 {
@@ -289,11 +289,18 @@ TftpHandler (uchar * pkt, unsigned dest, unsigned src, unsigned len)
 		break;
 
 	case TFTP_ERROR:
+		if(0==strcmp("File not found",pkt + 2)){
+			tftp_file=0;
+			NetState = NETLOOP_SUCCESS;
+			break;
+			}
+		else{	
 		printf ("\nTFTP error: '%s' (%d)\n",
 					pkt + 2, ntohs(*(ushort *)pkt));
 		puts ("Starting again\n\n");
 		NetStartAgain ();
 		break;
+		}
 	}
 }
 

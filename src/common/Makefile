@@ -74,6 +74,10 @@ COBJS	= main.o ACEX1K.o altera.o bedbug.o circbuf.o \
 	  virtex2.o xilinx.o crc16.o xyzModem.o
 endif
 
+#ifdef __DEVICE_CHECK
+COBJS	+= device_check.o
+#endif
+
 ifndef BOOT_FROM_NAND
 COBJS	+= flash.o
 endif

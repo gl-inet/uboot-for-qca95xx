@@ -339,7 +339,7 @@ write_buff(flash_info_t *info, uchar *source, ulong addr, ulong len)
 	ulong dst;
 	uchar *src;
 	int ext = 0;
-
+	int flg=0;
 	printf("write addr: %x\n", addr);
 	addr = addr - CFG_FLASH_BASE;
 
@@ -351,8 +351,17 @@ write_buff(flash_info_t *info, uchar *source, ulong addr, ulong len)
 		printf("Write failed, cross 16M is forbidden\n");
 		return -1;
 	}
-
 	while (total < len) {
+		if(flg==500){
+		green_led_on();
+		red_led_on();
+		}
+		else if(flg==1000){
+		flg = 0;
+		green_led_off();
+		red_led_off();
+		}
+		flg++;
 		src = source + total;
 		dst = addr + total;
 		bytes_this_page =

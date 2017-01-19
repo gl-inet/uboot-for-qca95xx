@@ -85,7 +85,8 @@ static int      retry_time = -1; /* -1 so can call readline before main_loop */
 int do_mdm_init = 0;
 extern void mdm_init(void); /* defined in board.c */
 #endif
-
+char nand_boot_failed = 0;
+char tftp_file = 1;
 /***************************************************************************
  * Watch for 'delay' seconds for autoboot stop or autoboot delay string.
  * returns: 0 -  no key string, allow autoboot
@@ -225,8 +226,6 @@ static int menukey = 0;
 static __inline__ int abortboot(int bootdelay)
 {
 	int abort = 0;
-	char *dev=NULL;
-	unsigned int val=0;
 
 #ifdef CONFIG_SILENT_CONSOLE
 	if (gd->flags & GD_FLG_SILENT) {
@@ -294,164 +293,10 @@ static __inline__ int abortboot(int bootdelay)
 	}
 #endif
 
-	if(bootdelay < 0){
-		dev = getenv("boot_dev");
-		//printf("dev select %s\n",dev);
-		if(strcmp(dev,"on") == 0)
-		{
-			val = switch_boot_load();
-			//printf("val is %d\n",val);
-			switch(val)//from nand boot
-			{
-			case 1: run_command("nboot 0x81000000 0",0);break;
-		
-			case 2: run_command("bootm 0x9f050000",0);break;
-			default: break;
-			}		
-		}
-	}
 	return abort;
 }
 # endif	/* CONFIG_AUTOBOOT_KEYED */
 #endif	/* CONFIG_BOOTDELAY >= 0  */
-
-/****************************************************************************/
-/*
- * Check if test mode is finished
- * @return: 1: done 0: not done
- */
-int test_done(void){
-	volatile unsigned int *s=(volatile unsigned int *)0x9fff0050;
-	if(*s==0x646f6e65) //done
-		return 1;
-	return 0;
-}
-/*
- * Check the calibration status
- * -1: no art found, stop
- * 0 : not calibrated, booting calibration firmware
- * 1 : calibrated, and but need to write config
- * 2 : calibrated, and config ready
- */
-int calibration_status(void){
-
-	int ret=-1;
-	int calibrated=0;
-	int has_art_final=0;
-	int has_config=0;
-	//volatile unsigned long *art_cal=(volatile unsigned long *)0x9f3f1000;
-	volatile unsigned short *art_final=(volatile unsigned short *)0x9fff1000;
-	volatile unsigned int *config_data=(volatile unsigned int *)0x9fff0010;
-//	volatile unsigned long *abeg=(volatile unsigned long *)0x9fff1138;
-	volatile unsigned char *v2=(volatile unsigned char *)0x9fff108f;
-	volatile unsigned char *v3=(volatile unsigned char *)0x9fff1095;
-	volatile unsigned char *v4=(volatile unsigned char *)0x9fff109b;
-
-//	int has_art_cal=0;
-//	if((*abeg & 0x0000ffff)==0x4142 && *(abeg+1)==0x45473132){
-//		has_art_cal=1;
-//	}
-
-
-	if(*config_data!=0xffffffff){
-		has_config=1;
-	}
-	//already calibrated
-	if(*v2!=0 && *v3!=0 && *v4!=0){
-		calibrated=1;
-	}
-
-	if(*art_final==0x0202){
-		has_art_final=1;
-	}
-
-	if(has_art_final){
-		if(calibrated){
-			if(has_config){
-				printf("Device calibrated. Booting ...\n");
-				ret=2;
-			}else{
-				printf("Device calibrated, need to write configure ...\n");;
-				ret=1;
-			}
-		}else{
-			printf("Device not calibrated. Booting the calibration firmware...\n");
-			ret=0;
-		}
-	}else{
-		printf("Cannot find art, please flash the default art first.\n");
-		ret=-1;
-	}
-
-//	if(!has_art_cal){ //没有发现刚刚校准后的art
-//		if(has_art_final){ //应该已经校准
-//			printf("Calibration ready. Booting...\n");
-//			ret=1;
-//		}else{	//没有刚刚校准的art，也没有最后的art，应该是出错了！
-//			printf("cannot find art, please calibrate!!!!!!!!!!\n");
-//			ret=-1;
-//		}
-//	}else{ //发现刚刚校准的art
-//		printf(" _____________________________________________________________ \n");
-//		printf(" | 1. Device just calibrated, need to copy art.%14c|\n",' ');
-//		if(has_art_final){
-//			printf(" |%10cOverwriting...%35c|\n",' ',' ');
-//		}else{
-//			printf(" |%10cCopy it to final... %29c|\n",' ',' ');
-//		}
-//		rc=run_command("erase 0x9fff0000 +0x10000",0);
-//		if(rc==1) rc=run_command("cp.b 0x9f3f1000 0x80060000 0x0f000",0);
-//		if(rc==1) rc=run_command("cp.b 0x80060000 0x9fff1000 0xf000",0);
-//		if(rc==1) printf(" |%6cdone%49c|\n",' ',' '); else printf(" |%6cfailed%47c|\n",' ',' ');
-//		ret=0;
-//	}
-	return ret;
-}
-
-/*
- * Now only need to write config
- * */
-int upgrade_firmware(void){
-	int rc=0;
-	//write mac address
-	printf("  ___________________________________________________________ \n");
-	printf(" | ** Writing MAC info%39c|\n",' ');
-	//rc=run_command("run lc",0); //don't write mac in new uboot
-
-//	rc=run_command("tftp 0x81000000 config.bin",0);
-//	if(rc==1) rc=run_command("cp.b 0x9fff1000 0x80060000 0xf000 && erase 0x9fff0000 +0x10000 && cp.b 0x81000000 0x9fff0000 $filesize && cp.b 0x80060000 0x9fff1000 0xf000",0);
-//	if(rc==1) rc=run_command("cp.b 0x9fff1000 0x80060000 0xf000",0);
-//	if(rc==1) rc=run_command("erase 0x9fff0000 +0x10000",0);
-//	if(rc==1) rc=run_command("cp.b 0x81000000 0x9fff0000 $filesize",0);
-//	if(rc==1) rc=run_command("cp.b 0x80060000 0x9fff1000 0xf000",0);
-
-//	if(rc==1) {
-//		printf(" |%6cdone%49c|\n",' ',' ');
-//	}else{
-//		printf(" |%6cfailed%47c|\n",' ',' ');
-//	}
-	//write firmware
-//	printf(" | 3. Writing firmware%39c|\n",' ');
-//	all_led_on(); //flash red, turn off green, off/of is reversed
-//	if(rc==1) rc=run_command("tftp 0x81000000 openwrt-domino.bin",0);
-//	//red_led_off(); //flash green
-//	if(rc==1) rc=run_command("erase 0x9f050000 +0x7f0000",0);
-//	all_led_on();
-//	//red_led_on(); //red on only
-//	if(rc==1) rc=run_command("cp.b 0x81000000 0x9f050000 0x7f0000",0);
-
-	rc=run_command("run lf",0);
-
-	if(rc==1) {
-		printf(" |%6cDone, resetting...%35c|\n",' ',' ');
-		printf(" |___________________________________________________________|\n");
-		run_command("reset",0);
-	}else{
-		printf(" |%6cFailed.%46c|\n",' ',' ');
-		printf(" |___________________________________________________________|\n");
-	}
-	return rc;
-}
 
 /****************************************************************************/
 
@@ -653,6 +498,7 @@ void main_loop (void)
                 saveenv();
                 s = "if nand bad; then run nlf; fi && boot";
         } else if (bootlimit && (bootcount > bootlimit)) {
+		nand_boot_failed = 1;
 		printf ("Warning: Bootlimit (%u) exceeded. Using altbootcmd.\n",
 		        (unsigned)bootlimit);
 		s = getenv ("altbootcmd");
@@ -679,33 +525,33 @@ void main_loop (void)
 #endif
 
 //	debug ("### main_loop: bootcmd=\"%s\"\n", s ? s : "<UNDEFINED>");
+	run_command("protect off all",0);
 
 	if (bootdelay >= 0 && s && !abortboot (bootdelay)) {
 # ifdef CONFIG_AUTOBOOT_KEYED
 		int prev = disable_ctrlc(1);	/* disable Control C checking */
 # endif
-
+		check_tftp_file();
 		int status=calibration_status();
-		int testdone=test_done();
 		/*是不是需要校准
 		 * -1: no art found, stop
 		 * 0 : not calibrated, booting calibration firmware
 		 * 1 : calibrated, and but need to write config
 		 * 2 : calibrated, and config ready
 		*/
-		if (status==0 || !testdone){ //start calibration firmware
-			/* setenv("bootargs", "console=ttyS0,115200 root=31:03 rootfstype=squashfs init=/sbin/init mtdparts=ar7240-nor0:256k(u-boot),64k(u-boot-env),12288k(firmware),2752k(rootfs),896k(uImage),64k(NVRAM),64k(ART)"); */
-			run_command("bootm 0x9fe80000",0);
-		}else if(status==1){
-			udelay(1000000);
-			if(upgrade_firmware()!=1){ //write config, return 1 if succeed
-				printf("Cannot write config, not booting.\n");
-				goto mainloop;
-			}
-		}else if(status==-1){
-			goto mainloop;
+		switch(status){
+			case 6:goto mainloop;break;
+			case 5:
+			case 4:printf("Booting image at: 0x9Fe80000\n"); 
+				run_command("bootm 0x9fe80000",0);
+				goto mainloop;break;
+			case 3:run_command("run lc",0);break;
+			case 2:
+			case 0:printf("Booting image at: 0x9F050000\n");break;
+			case 1:printf("Booting image at: 0x81000000\n");break;
+			default:break;
 		}
-
+	select_boot_dev();
 # ifndef CFG_HUSH_PARSER
 		run_command (s, 0);
 # else

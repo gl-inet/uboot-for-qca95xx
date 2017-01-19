@@ -363,7 +363,7 @@
 #endif
 
 #ifndef ATH_C_CMD
-#	define ATH_C_CMD	"lc=if ping 192.168.1.2; then tftp 0x81000000 config.bin && cp.b 0x9fff1000 0x80060000 0xf000 && cp.b 0x81000000 0x80060002 0x06 && erase 0x9fff0000 +0x10000 && cp.b 0x81000000 0x9fff0000 $filesize && cp.b 0x80060000 0x9fff1000 0xefff; else setenv bootcount 1 && saveenv && bootm 0x9fe80000; fi\0"
+#	define ATH_C_CMD	"lc=if ping 192.168.1.2; then tftp 0x81000000 config.bin && cp.b 0x9fff1000 0x80060000 0xf000 && cp.b 0x81000000 0x80060002 0x06 && erase 0x9fff0000 +0x10000 && cp.b 0x81000000 0x9fff0000 ffff && cp.b 0x80060000 0x9fff1000 0xefff; else setenv bootcount 1 && saveenv && bootm 0x9fe80000; fi\0"
 #endif
 
 /* boot or load firmware */
@@ -375,7 +375,7 @@
 /*nor flash load firmware*/
 #define GL_RLF_CMD "rlf=if ping 192.168.1.2; then tftp 0x80060000 ${dir}openwrt-gl-ar300m.bin && erase 0x9f050000 +$filesize && cp.b $fileaddr 0x9f050000 $filesize; else echo ping 192.168.1.2 failed; fi\0"
 /*select boot device*/
-#define GL_BOOT_DEV_CMD "boot_dev=on\0"
+#define GL_BOOT_DEV_CMD "boot_dev=off\0"
 #define GL_ALTBOOTCMD "altbootcmd=run blf\0"
 #define CONFIG_EXTRA_ENV_SETTINGS	\
 	"dir=\0" "bootlimit=3\0" GL_ALTBOOTCMD GL_BLF_CMD GL_DLF_CMD GL_WLF_CMD GL_RLF_CMD GL_BOOT_DEV_CMD ATH_U_CMD ATH_F_CMD ATH_C_CMD ""
