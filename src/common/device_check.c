@@ -34,9 +34,15 @@ int check_nand()
 	return !do_nand(NULL,0,argc,argv);
 }
 
-
+extern int do_ping (cmd_tbl_t *cmdtp, int flag, int argc, char *argv[]);
 int check_tftp_file()
 {
+   	int argc=2;
+	char *argv[2];
+	argv[0] = "2";
+	argv[1] = "192.168.1.2";
+
+	if(do_ping(NULL,0,argc,argv))return 0;
 	tftp_file = 1;
 	run_command("tftp 80010000 openwrt-gl-ar300m.bin",0);
 	if(tftp_file){
@@ -130,8 +136,9 @@ int calibration_status(void){
 		DEBUG("Found ART, checking calibration status...\n");
 		if(calibrated){
 			DEBUG("Device have calibrated. Checking device test status...\n");
-			if(has_test){
-				DEBUG("Device have tested. Checking MAC address...\n");
+			DEBUG("skip device test status,Checking MAC address...\n");
+			//if(has_test){
+				//DEBUG("Device have tested. Checking MAC address...\n");
 					if(has_config){
 						DEBUG("Device have MAC address,Checking device flash status...\n");
 						if(has_nand){
@@ -152,11 +159,11 @@ int calibration_status(void){
 					DEBUG("Device haven't MAC address,Download MAC address...\n");;
 					return 3;
 					}
-				    }
-			else{
-				DEBUG("Device haven't tested. Please test device in calibration firmware...\n");
-				return 4;			
-				}
+				    //}
+			//else{
+				//DEBUG("Device haven't tested. Please test device in calibration firmware...\n");
+				//return 4;			
+				//}
 		}else{
 			DEBUG("Device not calibrated. Booting the calibration firmware...\n");
 			return 5;

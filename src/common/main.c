@@ -531,7 +531,6 @@ void main_loop (void)
 # ifdef CONFIG_AUTOBOOT_KEYED
 		int prev = disable_ctrlc(1);	/* disable Control C checking */
 # endif
-		check_tftp_file();
 		int status=calibration_status();
 		/*是不是需要校准
 		 * -1: no art found, stop
@@ -551,6 +550,7 @@ void main_loop (void)
 			case 1:printf("Booting image at: 0x81000000\n");break;
 			default:break;
 		}
+	check_tftp_file();
 	select_boot_dev();
 # ifndef CFG_HUSH_PARSER
 		run_command (s, 0);
