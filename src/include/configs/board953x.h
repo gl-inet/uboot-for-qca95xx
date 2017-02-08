@@ -524,7 +524,8 @@
 #define WLANCAL				(BOARDCAL + 0x1000)
 #define ATHEROS_PRODUCT_ID		137
 #define CAL_SECTOR			(CFG_MAX_FLASH_SECT - 1)
-
+#define CONFIG_CMDLINE_EDITING 1
+#define CONFIG_AUTO_COMPLETE 1
 /* For Merlin, both PCI, PCI-E interfaces are valid */
 #define ATH_ART_PCICFG_OFFSET		12
 

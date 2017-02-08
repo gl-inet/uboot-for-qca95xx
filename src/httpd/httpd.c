@@ -75,9 +75,13 @@ static void httpd_download_progress(void){
 		puts("\n         ");
 		post_packet_counter = 0;
 		post_line_counter++;
+		green_led_off();
 	}
-	if(post_line_counter == 10){
+	if(post_line_counter == 80)
+	green_led_on();
+	if(post_line_counter == 160){
 		/* wan_led_toggle(); */
+	green_led_off();
 		post_line_counter=0;
 	}
 
@@ -227,7 +231,7 @@ static int httpd_findandstore_firstchunk(void){
 				}
 
 				printf("Loading: ");
-
+				red_led_off();
 				// how much data we are storing now?
 				hs->upload = (unsigned int)(uip_len - (end - (char *)uip_appdata));
 

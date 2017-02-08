@@ -281,7 +281,7 @@ void ArpTimeoutCheck(void)
 /*
  *	Main network processing loop.
  */
-
+char Tftp_stop;
 int
 NetLoop(proto_t protocol)
 {
@@ -302,7 +302,7 @@ NetLoop(proto_t protocol)
 	NetArpWaitReplyIP = 0;
 	NetArpWaitTxPacket = NULL;
 	NetTxPacket = NULL;
-
+	Tftp_stop = 0;
 	if (!NetTxPacket) {
 		int	i;
 		/*
@@ -545,9 +545,10 @@ skip_netloop:
 		/*
 		 *	Abort if ctrl-c was pressed.
 		 */
-		if (ctrlc()) {
+		if (ctrlc()||Tftp_stop) {
 			eth_halt();
 			puts ("\nAbort\n");
+			Tftp_stop = 0;
 			return (-1);
 		}
 #if defined(CFG_ATHRS26_PHY) && defined(CFG_ATHRHDR_EN)
@@ -832,7 +833,7 @@ static void PingStart(void)
 #if defined(CONFIG_NET_MULTI)
 	printf ("Using %s device\n", eth_get_name());
 #endif	/* CONFIG_NET_MULTI */
-	NetSetTimeout (10 * CFG_HZ, PingTimeout);
+	NetSetTimeout ( 5*CFG_HZ, PingTimeout);
 	NetSetHandler (PingHandler);
 
 	PingSend();

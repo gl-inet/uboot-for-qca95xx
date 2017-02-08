@@ -15,9 +15,9 @@
 #if (CONFIG_COMMANDS & CFG_CMD_NET)
 
 #define WELL_KNOWN_PORT	69		/* Well known TFTP port #		*/
-#define TIMEOUT		5		/* Seconds to timeout for a lost pkt	*/
+#define TIMEOUT		1		/* Seconds to timeout for a lost pkt	*/
 #ifndef	CONFIG_NET_RETRY_COUNT
-# define TIMEOUT_COUNT	10		/* # of timeouts before giving up  */
+# define TIMEOUT_COUNT	0		/* # of timeouts before giving up  */
 #else
 # define TIMEOUT_COUNT  (CONFIG_NET_RETRY_COUNT * 2)
 #endif
@@ -43,7 +43,8 @@ static ulong	TftpLastBlock;		/* last packet sequence number received */
 static ulong	TftpBlockWrap;		/* count of sequence number wraparounds */
 static ulong	TftpBlockWrapOffset;	/* memory offset due to wrapping	*/
 static int	TftpState;
-
+char Tftp_stop;
+extern char tftp_file;
 #define STATE_RRQ	1
 #define STATE_DATA	2
 #define STATE_TOO_LARGE	3
@@ -171,7 +172,6 @@ TftpSend (void)
 	NetSendUDPPacket(NetServerEther, NetServerIP, TftpServerPort, TftpOurPort, len);
 }
 
-extern char tftp_file;
 static void
 TftpHandler (uchar * pkt, unsigned dest, unsigned src, unsigned len)
 {
@@ -309,8 +309,10 @@ static void
 TftpTimeout (void)
 {
 	if (++TftpTimeoutCount > TIMEOUT_COUNT) {
-		puts ("\nRetry count exceeded; starting again\n");
-		NetStartAgain ();
+//		puts ("\nRetry count exceeded; starting again\n");
+//		NetStartAgain ();
+		tftp_file = 0;
+		Tftp_stop = 1;
 	} else {
 		puts ("T ");
 		NetSetTimeout (TIMEOUT * CFG_HZ, TftpTimeout);
@@ -325,7 +327,7 @@ TftpStart (void)
 #ifdef CONFIG_TFTP_PORT
 	char *ep;             /* Environment pointer */
 #endif
-
+	Tftp_stop = 0;
 	if (BootFile[0] == '\0') {
 		sprintf(default_filename, "%02lX%02lX%02lX%02lX.img",
 			NetOurIP & 0xFF,
