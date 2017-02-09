@@ -363,7 +363,7 @@
 #endif
 
 #ifndef ATH_C_CMD
-#	define ATH_C_CMD	"lc=if ping 192.168.1.2; then tftp 0x81000000 config.bin && cp.b 0x9fff1000 0x80060000 0xf000 && cp.b 0x81000000 0x80060002 0x06 && erase 0x9fff0000 +0x10000 && cp.b 0x81000000 0x9fff0000 ffff && cp.b 0x80060000 0x9fff1000 0xefff; else setenv bootcount 1 && saveenv && bootm 0x9fe80000; fi\0"
+#	define ATH_C_CMD	"lc=if ping 192.168.1.2; then tftp 0x81000000 config.bin && cp.b 0x9fff0040 0x81000040 0xffc0 && cp.b 0x81000000 0x81001002 0x06 && erase 0x9fff0000 +0xffff && cp.b 0x81000000 0x9fff0000 0xffff; else setenv bootcount 1 && saveenv && bootm 0x9fe80000; fi\0"
 #endif
 
 /* boot or load firmware */

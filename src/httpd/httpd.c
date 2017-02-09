@@ -283,7 +283,7 @@ void httpd_appcall(void){
 
 			// if we are pooled
 			if(uip_poll()){
-				if(hs->count++ >= 2500){
+				if(hs->count++ >= 10000){
 					httpd_state_reset();
 					uip_abort();
 				printf("error 3\n");

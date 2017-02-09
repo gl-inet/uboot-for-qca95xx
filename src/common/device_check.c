@@ -136,9 +136,9 @@ int calibration_status(void){
 		DEBUG("Found ART, checking calibration status...\n");
 		if(calibrated){
 			DEBUG("Device have calibrated. Checking device test status...\n");
-			DEBUG("skip device test status,Checking MAC address...\n");
-			//if(has_test){
-				//DEBUG("Device have tested. Checking MAC address...\n");
+			//DEBUG("skip device test status,Checking MAC address...\n");
+			if(has_test){
+				DEBUG("Device have tested. Checking MAC address...\n");
 					if(has_config){
 						DEBUG("Device have MAC address,Checking device flash status...\n");
 						if(has_nand){
@@ -152,18 +152,18 @@ int calibration_status(void){
 								} 
 							}
 						else{
-							DEBUG("Device only have nor flash，Booting standard firmware from nor flash...\n");
+							DEBUG("Device only have nor flash,Booting standard firmware from nor flash...\n");
 							return 2;
 							}											
 					}else{
 					DEBUG("Device haven't MAC address,Download MAC address...\n");;
 					return 3;
 					}
-				    //}
-			//else{
-				//DEBUG("Device haven't tested. Please test device in calibration firmware...\n");
-				//return 4;			
-				//}
+				    }
+			else{
+				DEBUG("Device haven't tested. Please test device in calibration firmware...\n");
+				return 4;			
+				}
 		}else{
 			DEBUG("Device not calibrated. Booting the calibration firmware...\n");
 			return 5;
