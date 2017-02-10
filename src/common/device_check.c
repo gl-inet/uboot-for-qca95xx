@@ -53,7 +53,7 @@ int check_tftp_file()
 	if(0==check_nand()) return 0;
 
 	tftp_file = 1;
-	run_command("tftp 80010000 openwrt-ar300m-ubi-2.20.img",0);
+	run_command("tftp 80010000 openwrt-ar300m-ubi.img",0);
 	if(tftp_file){
 		setenv("tmp_env"," nand erase && nand write $fileaddr 0 $filesize");
 		run_command("run tmp_env",0);
