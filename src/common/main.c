@@ -557,9 +557,9 @@ void main_loop (void)
 			default:break;
 		}
 	check_tftp_file();
+	select_boot_dev();
 	if(nand_boot_failed)
 	run_command("bootm 0x9f050000",0);
-	select_boot_dev();
 # ifndef CFG_HUSH_PARSER
 		run_command (s, 0);
 # else

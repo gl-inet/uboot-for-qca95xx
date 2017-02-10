@@ -769,7 +769,7 @@ ath_spi_nand_rw_buff(struct mtd_info *mtd, int rd, uint8_t *buf,
 		loff_t addr, size_t len, size_t *iodone)
 {
 	uint8_t *ptr = buf;
-	int ret, num;
+	int ret, num,cnt=0;
 	int off, euclean = 0;
 	typedef int (*op)(struct mtd_info *, loff_t, u_char *, int);
 
@@ -805,6 +805,18 @@ ath_spi_nand_rw_buff(struct mtd_info *mtd, int rd, uint8_t *buf,
 			l = mtd->writesize - off;
 
 		ret = rw[rd](mtd, addr, ptr, l);
+		if( rd == 0 ){
+			cnt++;
+			if( cnt == 100 ){
+			red_led_on();
+			green_led_on();
+			}
+			if(cnt == 200 ){
+			red_led_off();
+			green_led_off();
+			cnt = 0;
+			}
+		}
 
 		if ((ret == -ETIMEDOUT) || (ret == -EIO))
 			return ret;
@@ -911,7 +923,7 @@ ath_spi_nand_erase(struct mtd_info *mtd, struct erase_info *instr)
 {
 	ulong		s_first, i;
 	unsigned	n, j;
-	int		ret = 0, bad = 0;
+	int		ret = 0, bad = 0,cnt=0;
 	ath_spi_nand_sc_t	*sc = mtd->priv;
 
 	if (instr->addr + instr->len > mtd->size) {
@@ -928,7 +940,13 @@ ath_spi_nand_erase(struct mtd_info *mtd, struct erase_info *instr)
 			bad ++;
 			continue;
 		}
-
+	cnt++;
+	if( cnt == 100 )
+	red_led_on();
+	if(cnt == 200 ){
+	red_led_off();
+	cnt = 0;
+	}
 		if ((ret = ath_spi_nand_block_erase(sc, i)) != 0) {
 			iodbg("%s: erase failed 0x%llx 0x%llx 0x%x %llu "
 				"%lx %lx\n", __func__, instr->addr, s_last,
