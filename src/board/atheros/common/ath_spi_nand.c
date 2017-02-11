@@ -795,10 +795,9 @@ ath_spi_nand_rw_buff(struct mtd_info *mtd, int rd, uint8_t *buf,
 			return ret;
 
 		if (ret == 1) {
-			addr = (addr & mtd->erasesize_mask) + mtd->erasesize;
+			addr += (addr & mtd->erasesize_mask) + mtd->erasesize;
 			continue;
 		}
-
 		l = (len > mtd->writesize) ? mtd->writesize : len;
 		off = (addr & mtd->writesize_mask);
 		if ((off + l) > mtd->writesize)
