@@ -369,7 +369,7 @@
 /* boot or load firmware */
 #define GL_BLF_CMD "blf=bootm 0x9f050000 || run lf; boot\0"
 /* nand load firmware */
-#define GL_DLF_CMD "dlf=if ping 192.168.1.2; then echo ok; elif ping 192.168.1.2; then echo ok; elif ping 192.168.1.2; then echo ok; elif echo ping 192.168.1.2; then echo ok; elif echo ping 192.168.1.2; then echo ok; else echo ping finally failed; fi; tftp 0x81000000 openwrt-ar300m-ubi.img && nand erase && nand write $fileaddr 0 $filesize\0"
+#define GL_DLF_CMD "dlf=if ping 192.168.1.2; then echo ok; elif ping 192.168.1.2; then echo ok; elif ping 192.168.1.2; then echo ok; elif echo ping 192.168.1.2; then echo ok; elif echo ping 192.168.1.2; then echo ok; else echo ping finally failed; fi; tftp 0x81000000 openwrt-gl-ar300m-ubi.img && nand erase && nand write $fileaddr 0 $filesize\0"
 /* web load firmware */
 #define GL_WLF_CMD "wlf=if nand bad; then nand erase && nand write $web_fileaddr 0 $web_filesize; else erase 0x9f050000 +e30000 && cp.b $web_fileaddr 0x9f050000 $web_filesize; fi; erase 0x9f040000 +0x10000\0"
 /*nor flash load firmware*/

@@ -265,6 +265,7 @@ int do_nand(cmd_tbl_t * cmdtp, int flag, int argc, char *argv[])
 			ret = nand_write(nand, (loff_t)off, &size, (u_char *)addr);
 
 		green_led_off();
+		red_led_off();
 		printf(" %d bytes %s: %s\n", size,
 		       i ? "read" : "written", ret ? "ERROR" : "OK");
 

@@ -53,7 +53,7 @@ int check_tftp_file()
 	if(0==check_nand()) return 0;
 
 	tftp_file = 1;
-	run_command("tftp 80010000 openwrt-ar300m-ubi.img",0);
+	run_command("tftp 80010000 openwrt-gl-ar300m-ubi.img",0);
 	if(tftp_file){
 		setenv("tmp_env"," nand erase && nand write $fileaddr 0 $filesize");
 		run_command("run tmp_env",0);
@@ -133,12 +133,12 @@ int calibration_status(void){
 	}
 
 	if(has_art_final){
-		DEBUG("Found ART, checking calibration status...\n");
+		DEBUG("Found ART,Checking calibration status...\n");
 		if(calibrated){
-			DEBUG("Device have calibrated. Checking device test status...\n");
+			DEBUG("Device have calibrated,Checking device test status...\n");
 			//DEBUG("skip device test status,Checking MAC address...\n");
 			if(has_test){
-				DEBUG("Device have tested. Checking MAC address...\n");
+				DEBUG("Device have tested,Checking MAC address...\n");
 					if(has_config){
 						DEBUG("Device have MAC address,Checking device flash status...\n");
 						if(has_nand){
