@@ -1,3 +1,6 @@
+update: 20170228
+fix makefile, now can be compiled in any openwrt tree
+
 这个是基于赵刚的uboot修改的，要修正几个问题：
 
 1. 首先要适应卓翼的生产流程，流程在下面说明
