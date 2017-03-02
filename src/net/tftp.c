@@ -291,7 +291,7 @@ TftpHandler (uchar * pkt, unsigned dest, unsigned src, unsigned len)
 	case TFTP_ERROR:
 		if(0==strcmp("File not found",pkt + 2)){
 			tftp_file=0;
-			NetState = NETLOOP_SUCCESS;
+			NetState = NETLOOP_FAIL;
 			break;
 			}
 		else{	
