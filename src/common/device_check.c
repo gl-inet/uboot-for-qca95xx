@@ -73,8 +73,8 @@ int select_boot_dev(){
 		//printf("val is %d\n",val);
 		switch(val)//from nand boot
 		{
-		case 1: run_command("nboot 0x81000000 0",0);break;
-		case 2: run_command("bootm 0x9f050000",0);break;
+		case 2: run_command("nboot 0x81000000 0",0);break;
+		case 1: run_command("bootm 0x9f050000",0);break;
 		default: break;
 		}		
 	}

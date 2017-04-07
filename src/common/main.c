@@ -532,7 +532,8 @@ void main_loop (void)
 
 //	debug ("### main_loop: bootcmd=\"%s\"\n", s ? s : "<UNDEFINED>");
 	run_command("protect off all",0);
-
+	printf("wdt reg 0 %X\n",ath_reg_rd(0x18060008));
+	printf("wdt reg 1 %X\n",ath_reg_rd(0x1806000c));
 	if (bootdelay >= 0 && s && !abortboot (bootdelay)) {
 # ifdef CONFIG_AUTOBOOT_KEYED
 		int prev = disable_ctrlc(1);	/* disable Control C checking */
@@ -546,10 +547,10 @@ void main_loop (void)
 		*/
 		switch(status){
 			case 6:goto mainloop;break;
-			case 5:
-			case 4:printf("Booting image at: 0x9Fe80000\n"); 
+			case 5:printf("Booting image at: 0x9Fe80000\n"); 
 				run_command("bootm 0x9fe80000",0);
 				goto mainloop;break;
+			case 4:break;
 			case 3:run_command("run lc",0);break;
 			case 2:
 			case 0:printf("Booting image at: 0x9F050000\n");break;
