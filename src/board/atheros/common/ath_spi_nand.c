@@ -102,9 +102,11 @@
 						 ((sc)->info.ecc_mask))
 #define ATH_SPI_NAND_UNCORR(sc)			((sc)->info.uncorr_code)
 
-#define ATH_NAND_MID				0xC8
+#define ATH_NAND_MID				0xc8
 /* HeYang Tek spi nand */
-#define HYT_NAND_MID				0xC9
+#define HYT_NAND_MID				0xc9
+/*Etron nand*/
+#define ETH_NAND_MID				0xd5
 enum {
 	ATH_NAND_VER_1 = 0,
 	ATH_NAND_VER_2,
@@ -315,7 +317,8 @@ ath_parse_read_id(ath_spi_nand_sc_t *sc, uint8_t *did)
 		id = ath_spi_nand_read_id(version);
 
 		if (get_ath_spi_nand_vendor(id) != ATH_NAND_MID &&
-		    get_ath_spi_nand_vendor(id) != HYT_NAND_MID)
+		    get_ath_spi_nand_vendor(id) != HYT_NAND_MID &&
+		    get_ath_spi_nand_vendor(id) != ETH_NAND_MID )
 			continue;
 
 		*did = get_ath_spi_nand_device(id);
@@ -430,6 +433,23 @@ __ath_spi_nand_status(ath_spi_nand_sc_t *sc, const char *f)
 #define ath_spi_nand_status(sc) __ath_spi_nand_status(sc, __func__)
 
 static int
+__ath_spi_set_nand_status(ath_spi_nand_sc_t *sc, const char *f)
+{
+	int i, status;
+
+	status=ath_spi_nand_status(sc);
+	status = status & (~ATH_SPI_NAND_STATUS_E_FAIL);
+	ath_spi_nand_set_feature(ATH_SPI_NAND_STATUS,status);
+	udelay(60000);
+	status=ath_spi_nand_status(sc);
+	if(status & ATH_SPI_NAND_STATUS){
+	printf("bad black\n");
+	}
+	return (0);
+}
+#define ath_spi_set_nand_status(sc) __ath_spi_set_nand_status(sc, __func__)
+
+static int
 ath_spi_nand_ecc(ath_spi_nand_sc_t *sc, int on)
 {
 	uint32_t feat;
@@ -439,6 +459,7 @@ ath_spi_nand_ecc(ath_spi_nand_sc_t *sc, int on)
 
 	if (on) {
 		/* Enable internal ECC */
+		
 		ath_spi_nand_set_feature(ATH_SPI_NAND_FEAT,
 					feat | ATH_SPI_NAND_FEAT_ECC_EN);
 		feat = ATH_SPI_NAND_FEAT_ECC_EN;
@@ -561,7 +582,7 @@ ath_spi_nand_cmd_read_from_cache(ath_spi_nand_sc_t *sc, int start, int len, u_ch
 int
 ath_spi_nand_page_read(struct mtd_info *mtd, loff_t off, u_char *buf, int len)
 {
-	u_char tmp;
+	u_char tmp[mtd->writesize+1];
 	loff_t page = off >> mtd->writesize_shift;
 	int status, byte, ret = 0, eccfail = 0;
 	ath_spi_nand_sc_t	*sc = mtd->priv;
@@ -585,9 +606,9 @@ ath_spi_nand_page_read(struct mtd_info *mtd, loff_t off, u_char *buf, int len)
 		 * to look into the spare area for the BBM, we set the
 		 * wrap configuration to 00'b OR-ed with offset page size.
 		 */
-		byte = mtd->writesize;
-		len  = 1;
-		buf = &tmp;
+		byte = 0;
+		len  = mtd->writesize+1;
+		buf = tmp;
 	} else {
 		iodbg("page read\n");
 		byte = off & mtd->writesize_mask;
@@ -608,9 +629,9 @@ ath_spi_nand_page_read(struct mtd_info *mtd, loff_t off, u_char *buf, int len)
 	ath_spi_nand_cmd_read_from_cache(sc, byte, len, buf);
 	ath_spi_nand_end();
 
-	if (buf == &tmp) {
+	if (buf == tmp) {
 		/* BBM check */
-		if (tmp != 0xff) {
+		if (tmp[mtd->writesize] != 0xff) {
 			ath_spi_nand_set_blk_state(mtd, off, ATH_NAND_BLK_BAD);
 			return 1;	/* Bad Block */
 		} else {
@@ -738,7 +759,7 @@ __ath_spi_nand_block_isbad(struct mtd_info *mtd, loff_t off)
 {
 	unsigned int bs;
 	loff_t page = (off & ~mtd->erasesize_mask);
-
+	
 	bs = ath_spi_nand_get_blk_state(mtd, off);
 
 	if ((bs == ATH_NAND_BLK_ERASED) || (bs == ATH_NAND_BLK_GOOD)) {
@@ -880,14 +901,15 @@ ath_spi_nand_block_erase(ath_spi_nand_sc_t *sc, loff_t block)
 	struct mtd_info *mtd = sc->mtd;
 	uint32_t row_addr;
 	int ret = 0, status;
-
+	
 	if ((ret = ath_spi_nand_write_enable(__func__)) != 0) {
 		return -EIO;
 	}
-
+	
 	row_addr = block_to_ra(block >> mtd->erasesize_shift);
 
 	iodbg("%s: Block %u\n", __func__, block_to_ra(row_addr));
+	
 	ath_spi_nand_start();
 	ath_spi_nand_bit_banger(ATH_SPI_NAND_CMD_BLOCK_ERASE);
 #if bit_banger 
@@ -898,7 +920,6 @@ ath_spi_nand_block_erase(ath_spi_nand_sc_t *sc, loff_t block)
 	ath_spi_nand_send_addr(row_addr);
 #endif 
 	ath_spi_nand_end();
-
 	status = ath_spi_nand_status(mtd->priv);
 
 	if (status == -ETIMEDOUT) {
@@ -910,9 +931,8 @@ ath_spi_nand_block_erase(ath_spi_nand_sc_t *sc, loff_t block)
 	} else {
 		ath_spi_nand_set_blk_state(mtd, block, ATH_NAND_BLK_GOOD);
 	}
-
 	ath_spi_nand_write_disable(__func__);
-
+	
 	return ret;
 }
 
@@ -1296,13 +1316,12 @@ ath_spi_nand_block_markbad(struct mtd_info *mtd, loff_t ofs)
 
 #endif /* oob_support */
 
-#define ath_spi_nand_debug	0
+#define ath_spi_nand_debug	1
 #if ath_spi_nand_debug
 void
 ath_nand_dump_buf(loff_t addr, void *v, unsigned count)
 {
-	unsigned	*buf = v,
-			*end = buf + (count / sizeof(*buf));
+	unsigned	*buf = v,*end = buf + (count / sizeof(*buf));
 
 	printk("____ Dumping %d bytes at 0x%p 0x%llx_____\n", count, buf, addr);
 
@@ -1313,10 +1332,10 @@ ath_nand_dump_buf(loff_t addr, void *v, unsigned count)
 	printk("___________________________________\n");
 }
 
-u_char buf[4 * 4096];
+unsigned char buf[4 * 4096];
 
 
-void noinline
+void 
 ath_spi_nand_read_test(ath_spi_nand_sc_t *sc, struct mtd_info *mtd, loff_t addr, int len)
 {
 	size_t retlen;
@@ -1338,15 +1357,17 @@ ath_spi_nand_test(ath_spi_nand_sc_t *sc, struct mtd_info *mtd)
 {
 	int ret, retlen;
 
-	ath_spi_nand_read_test(sc, mtd, 0x80000, 4096);
+	//ath_spi_nand_read_test(sc, mtd, 0x80000, 4096);
 
 	//ath_spi_nand_ecc(sc, 1);
-
-	if (ath_spi_nand_block_erase(sc, 0))
-		printk("erase failed\n");
+	int i=0;
+	for(i=0;i<1024;i++)
+	if (ath_spi_nand_block_erase(sc, i*0x20000))
+		printk("%X is factory bad block\n",i<<17);
+	printk("format complete\n");
 
 	//Addr/Len (aligned or unaligned)/num (single or multi page)
-	ath_spi_nand_read_test(sc, mtd, 0, 2048);	// a/a/s
+/*	ath_spi_nand_read_test(sc, mtd, 0, 2048);	// a/a/s
 	ath_spi_nand_read_test(sc, mtd, 0, 4096);	// a/a/m
 	ath_spi_nand_read_test(sc, mtd, 0x80000 + 1024, 1024);	// u/a/s
 	ath_spi_nand_read_test(sc, mtd, 0x80000 + 1000, 4096);	// u/a/m
@@ -1366,7 +1387,7 @@ ath_spi_nand_test(ath_spi_nand_sc_t *sc, struct mtd_info *mtd)
 	if (ret == 0)
 		ath_nand_dump_buf(0, buf, 2048);
 
-	ath_reg_wr(0xb806001c, -1);
+	ath_reg_wr(0xb806001c, -1);*/
 }
 
 void
@@ -1402,10 +1423,11 @@ static int ath_spi_nand_init_info(struct mtd_info *mtd, ath_spi_nand_sc_t *sc, u
 	case 0xA2:
 	case 0xB2:
 	case 0x59:
+	case 0x11:
 		sc->info.version = ATH_NAND_VER_2;
 		sc->info.ecc_mask = 0x07;
 		sc->info.uncorr_code = 7;
-		if (did == 0xA1 || did == 0xB1 || did == 0x59)
+		if (did == 0xA1 || did == 0xB1 || did == 0x59 || did == 0x11)
 			mtd->size = (128 << 20);
 		else
 			mtd->size = (256 << 20);
@@ -1524,7 +1546,7 @@ static int ath_spi_nand_probe(void)
 	printf("NAND Flash:  %u MB, page size = 0x%x block size = 0x%x oob size = 0x%x\n",
                mtd->size >> 20, mtd->writesize, mtd->erasesize, mtd->oobsize);
 
-	ath_spi_nand_test(sc, mtd);
+	//ath_spi_nand_test(sc, mtd);
 
 	return 0;
 
@@ -1548,3 +1570,22 @@ int  ath_spi_nand_init(void)
 
 	return ret;
 }
+
+
+#include <common.h>
+#include <command.h>
+
+int do_format (cmd_tbl_t *cmdtp, int flag, int argc, char *argv[])
+{
+    ath_spi_nand_sc_t	*sc = &ath_spi_nand_sc;
+    ath_spi_fs(1);	// Enable access to SPI controller
+    ath_spi_nand_test(sc, sc->mtd);
+    ath_spi_fs(0);	// disable access to SPI controller
+    return 0;
+}
+
+U_BOOT_CMD(
+    nandformat,    2,    0,    do_format,
+    "nandformat:format nand flash\n",
+    "nandformat:format nand flash\n"
+);
