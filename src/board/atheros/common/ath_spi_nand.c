@@ -107,6 +107,8 @@
 #define HYT_NAND_MID				0xc9
 /*Etron nand*/
 #define ETH_NAND_MID				0xd5
+#define MX_NAND_MID				0xA1
+#define FM_NAND_MID                             0XA1
 enum {
 	ATH_NAND_VER_1 = 0,
 	ATH_NAND_VER_2,
@@ -301,7 +303,7 @@ ath_spi_nand_read_id(int version)
 
 	if (version == ATH_NAND_VER_2)
 		id >>= 8;
-
+	printf("manu id %X\n",id);
 	return id;
 }
 
@@ -318,7 +320,8 @@ ath_parse_read_id(ath_spi_nand_sc_t *sc, uint8_t *did)
 
 		if (get_ath_spi_nand_vendor(id) != ATH_NAND_MID &&
 		    get_ath_spi_nand_vendor(id) != HYT_NAND_MID &&
-		    get_ath_spi_nand_vendor(id) != ETH_NAND_MID )
+		    get_ath_spi_nand_vendor(id) != ETH_NAND_MID &&
+		    get_ath_spi_nand_vendor(id) != MX_NAND_MID)
 			continue;
 
 		*did = get_ath_spi_nand_device(id);
@@ -968,8 +971,8 @@ ath_spi_nand_erase(struct mtd_info *mtd, struct erase_info *instr)
 	}
 		if ((ret = ath_spi_nand_block_erase(sc, i)) != 0) {
 			iodbg("%s: erase failed 0x%llx 0x%llx 0x%x %llu "
-				"%lx %lx\n", __func__, instr->addr, s_last,
-				mtd->erasesize, i, ba1, ba0);
+				"%lx %lx\n", __func__, instr->addr, 0,
+				mtd->erasesize, i, 0, 0);
 			break;
 		}
 	}
@@ -1087,7 +1090,7 @@ ath_spi_nand_oob_page_read(struct mtd_info *mtd, loff_t off,
 	}
 
 	if (ATH_SPI_NAND_GET_ECCS(sc, status) != ASNS_ECC_ERR_NONE) {
-		ret = -EUCLEAN;
+		//ret = -EUCLEAN;
 	}
 
 	if (ops->datbuf) {
@@ -1424,10 +1427,12 @@ static int ath_spi_nand_init_info(struct mtd_info *mtd, ath_spi_nand_sc_t *sc, u
 	case 0xB2:
 	case 0x59:
 	case 0x11:
+	case 0x12:
+	case 0xe1:
 		sc->info.version = ATH_NAND_VER_2;
 		sc->info.ecc_mask = 0x07;
 		sc->info.uncorr_code = 7;
-		if (did == 0xA1 || did == 0xB1 || did == 0x59 || did == 0x11)
+		if (did == 0xA1 || did == 0xB1 || did == 0x59 || did == 0x11||did == 0x12||did == 0xe1)
 			mtd->size = (128 << 20);
 		else
 			mtd->size = (256 << 20);
@@ -1469,8 +1474,8 @@ static int ath_spi_nand_probe(void)
 	}
 
 	/* initialise mtd sc data struct */
-	if (ath_parse_read_id(sc, &did))
-		goto out_err_hw_init;
+	if (ath_parse_read_id(sc, &did));
+		//goto out_err_hw_init;
 
 	sc = &ath_spi_nand_sc;
 	sc->mtd = &nand_info[nand_curr_device];
