@@ -350,7 +350,7 @@
 #	if (FLASH_SIZE == 32)
 #		define ATH_U_CMD	gen_cmd2(lu, 0x9f000000, 0xa0000000, ATH_U_FILE)
 #	else
-#		define ATH_U_CMD	"lu=tftp 0x80060000 ${dir}uboot_for_gl-ar300m.bin && erase 0x9f000000 +50000 && cp.b $fileaddr 0x9f000000 $filesize; reset\0"
+#		define ATH_U_CMD	"lu=tftp 0x80060000 ${dir}uboot-gl-ar300m.bin && erase 0x9f000000 +50000 && cp.b $fileaddr 0x9f000000 $filesize; reset\0"
 #	endif
 #endif
 
@@ -363,7 +363,7 @@
 #endif
 
 #ifndef ATH_C_CMD
-#	define ATH_C_CMD	"lc=if ping 192.168.1.2; then tftp 0x81000000 config.bin && cp.b 0x9fff0040 0x81000040 0xffc0 && cp.b 0x81000000 0x81001002 0x06 && erase 0x9fff0000 +0xffff && cp.b 0x81000000 0x9fff0000 0xffff; else setenv bootcount 1 && saveenv && bootm 0x9fe80000; fi\0"
+#	define ATH_C_CMD	"lc=if ping 192.168.1.2; then tftp 0x81000000 config.bin && cp.b 0x9fff0040 0x81000040 0xffc0 && cp.b 0x81000000 0x81001002 0x06 && erase 0x9fff0000 +0xffff && cp.b 0x81000000 0x9fff0000 0xffff; else setenv bootcount 1 && saveenv && bootm 0x9fed0000; fi\0"
 #endif
 
 /* boot or load firmware */

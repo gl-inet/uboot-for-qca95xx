@@ -85,8 +85,8 @@ int select_boot_dev(){
  * @return: 1: done 0: not done
  */
 int test_done(void){
-	volatile unsigned int *s=(volatile unsigned int *)0x9fff0050;
-	if(*s==0x646f6e65) //done
+	volatile unsigned int *s=(volatile unsigned int *)0x9fff0060;
+	if(*s==0x7365636f) //seco
 		return 1;
 	return 0;
 }
@@ -156,7 +156,7 @@ int calibration_status(void){
 							return 2;
 							}											
 					}else{
-					DEBUG("Device haven't MAC address,Download MAC address...\n");;
+					DEBUG("Device haven't MAC address,please write MAC in calibration firmware...\n");;
 					return 3;
 					}
 				    }
