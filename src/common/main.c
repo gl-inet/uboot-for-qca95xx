@@ -245,7 +245,7 @@ static __inline__ int abortboot(int bootdelay)
 #ifdef CONFIG_MENUPROMPT
 	printf(CONFIG_MENUPROMPT, bootdelay);
 #else
-	printf("Hit any key to stop autoboot: %2d ", bootdelay);
+	printf("Hit 'gl' to stop autoboot: %2d ", bootdelay);
 #endif
 
 #if defined CONFIG_ZERO_BOOTDELAY_CHECK
@@ -261,27 +261,37 @@ static __inline__ int abortboot(int bootdelay)
 		}
 	}
 #endif
-
+	char tmp_flag=0,tmp_key=0;
 	while ((bootdelay > 0) && (!abort)) {
 		int i;
 
 	
-		/* delay 100 * 10ms */
+		/* delay 200 * 10ms */
 		for (i=0; !abort && i<100; ++i) {
 			if (tstc()) {	/* we got a key press	*/
-				abort  = 1;	/* don't auto boot	*/
-				bootdelay = 0;	/* no more delay	*/
+				//abort  = 1;	/* don't auto boot	*/
+				//bootdelay = 0;	/* no more delay	*/
 # ifdef CONFIG_MENUKEY
 				menukey = getc();
 # else
-				(void) getc();  /* consume input	*/
+				//(void) getc();  /* consume input	*/
+				tmp_key = getc();
+				if(tmp_key == 'g'){
+					tmp_flag = 1;
+					break;
+				}
+				if((tmp_flag == 1)&&(tmp_key == 'l'))
+				{
+					abort  = 1;	/* don't auto boot	*/
+					bootdelay = 1;	/* no more delay	*/
+					break;					
+				}
 # endif
 				break;
 			}
 			udelay (10000);
-			--bootdelay;
 		}
-
+		--bootdelay;
 		printf ("\b\b\b%2d ", bootdelay);
 	}
 
@@ -464,7 +474,7 @@ void main_loop (void)
 
 			//turn on Red LED to show httpd started
 			if(counter==CONFIG_DELAY_TO_AUTORUN_HTTPD){
-				red_led_on();
+				green_led_on();
 			}
 
 			if(!reset_button_status()){
@@ -548,8 +558,8 @@ void main_loop (void)
 			case 4:
 			case 5:
 			case 3:
-				printf("Booting image at: 0x9Fed0000\n"); 
-				run_command("bootm 0x9fed0000",0);
+                               printf("Booting image at: 0x9F050000\n");
+                               run_command("bootm 0x9f050000",0);
 				goto mainloop;break;
 			//case 3:run_command("run lc",0);break;
 			case 2:

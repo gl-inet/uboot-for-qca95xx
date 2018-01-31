@@ -1897,7 +1897,7 @@ int NetLoopHttpd(void){
 	unsigned char ethinit_attempt = 0;
 	struct uip_eth_addr eaddr;
         static uchar mac[6];
-
+	char load_count=0;
 #ifdef CONFIG_NET_MULTI
 	NetRestarted = 0;
 	NetDevExists = 0;
@@ -2052,6 +2052,14 @@ int NetLoopHttpd(void){
 
 		// until upload is not completed, get back to the start of the loop
 		if(!webfailsafe_ready_for_upgrade){
+			load_count++;
+			if(load_count == 30){
+				green_led_on();
+			}
+			else if(load_count == 60){
+				green_led_off();
+				load_count=0;
+			}
 			continue;
 		}
 		printf("\nstop eth interface!!\n");
@@ -2060,7 +2068,7 @@ int NetLoopHttpd(void){
 
 		// show progress
 		do_http_progress(WEBFAILSAFE_PROGRESS_UPLOAD_READY);
-
+		green_led_off();
 		// try to make upgrade!
 		if(do_http_upgrade(NetBootFileXferSize, webfailsafe_upgrade_type) >= 0){
 			udelay(500000);

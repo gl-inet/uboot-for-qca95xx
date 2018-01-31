@@ -169,7 +169,7 @@ int calibration_status(void){
 			return 5;
 		}
 	}else{
-		DEBUG("Cannot find art, please flash the default art first.\n");
+		DEBUG("Device don't have ART,please write the default ART first...\n");
 		return 6;
 	}
 
