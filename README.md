@@ -1,13 +1,23 @@
-update: 20180202
+# U-boot for AR300M  
 
-这个是适用于生产4.0的uboot源码
+This repo is uboot source code which modified by GL.iNet team.  
 
-编译方法：
+# Prerequisites  
 
-1. 下载我们自己的SDK，openwrt或LEDE都可以
-2. 把整个代码clone在package目录下
-3. make menuconfig
-	Subtarget (Generic devices with NAND flash)  ---> 
-	Target Profile (GL-AR300M NAND)  --->
-5. make package/uboot-9531/compile V=s
-6. 编译好的二进制在bin/ar71xx/openwrt-ar71xx-cus531-nand-qca-legacy-uboot.bin
+It depends on OpenWRT toolchain. We assume that you have compiled firmware from buildroot. Downloading this repo to your OpenWRT buildroot source tree.  
+
+```bash  
+$ cd your/buildroot/path/package  
+$ git clone https://github.com/gl-inet/gl-uboot-source-for--ar300m uboot-9531
+$ cd -
+```  
+
+# Compiling U-boot  
+
+As you know, u-boot is a single package on buildroot, now we can compile it easily. Note that you need to select *Subtarget (Generic devices with NAND flash) --->* and *Target Profile (GL-AR300M NAND) --->* via `make menuconfig` at first.
+
+```  
+make package/uboot-9531/compile V=s
+```  
+
+The final binary file is located in **bin/ar71xx/openwrt-ar71xx-cus531-nand-qca-legacy-uboot.bin**.  
