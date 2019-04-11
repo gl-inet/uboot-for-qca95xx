@@ -70,7 +70,7 @@ int select_boot_dev(){
 	if(strcmp(dev,"on") == 0)
 	{
 		val = switch_boot_load();
-		printf("val is %d\n",val);
+		// printf("val is %d\n",val);
 		switch(val)//from nand boot
 		{
 		case 0: 
