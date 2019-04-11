@@ -1,1 +1,1 @@
-2d34d88fd33fa9128afc1d51269ee9c7  uboot-gl-ar300m.bin
+2cbdef69a99a0f18e9fdf093fe28b2e7 uboot-gl-ar300m.bin
