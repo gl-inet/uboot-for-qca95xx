@@ -69,7 +69,7 @@ ath_ram_type(uint32_t bs)
 						DDR_CONFIG_OPEN_PAGE_SET(0x1) | \
 						DDR_CONFIG_CAS_LATENCY_SET(0x1) | \
 						DDR_CONFIG_TMRD_SET(0xf) | \
-						DDR_CONFIG_TRFC_SET(0x15) | \
+						DDR_CONFIG_TRFC_SET(0x3f) | \
 						DDR_CONFIG_TRRD_SET(0x7) | \
 						DDR_CONFIG_TRP_SET(0x9) | \
 						DDR_CONFIG_TRCD_SET(0x9) | \
@@ -81,7 +81,7 @@ ath_ram_type(uint32_t bs)
 						DDR_CONFIG2_TWTR_SET(0x15) | \
 						DDR_CONFIG2_TRTP_SET(0x9) | \
 						DDR_CONFIG2_TRTW_SET(0xe) | \
-						DDR_CONFIG2_TWR_SET(0x1) | \
+						DDR_CONFIG2_TWR_SET(0x9) | \
 						DDR_CONFIG2_CKE_SET(0x1) | \
 						DDR_CONFIG2_CNTL_OE_EN_SET(0x1) | \
 						DDR_CONFIG2_BURST_LENGTH_SET(0x8)
@@ -170,11 +170,11 @@ ath_ddr_initial_config(uint32_t refresh)
 	uint32_t	*pll = (unsigned *)PLL_CONFIG_VAL_F;
 	uint32_t	bootstrap,revid;
 
-	/* prmsg("\nsri\n"); */
-	/* if(((revid=ath_reg_rd(RST_REVISION_ID_ADDRESS))&0xff0)==0x140)  */
-	/* 	prmsg("Honey Bee 1.%d\n", revid & 0xf); */
-	/* else  */
-	/* 	prmsg("Honey Bee 2.%d\n", revid & 0xf); */
+	prmsg("\nsri\n");
+	if(((revid=ath_reg_rd(RST_REVISION_ID_ADDRESS))&0xff0)==0x140) 
+		prmsg("Honey Bee 1.%d\n", revid & 0xf);
+	else 
+		prmsg("Honey Bee 2.%d\n", revid & 0xf);
 
 	bootstrap = ath_reg_rd(RST_BOOTSTRAP_ADDRESS);
 
@@ -192,9 +192,9 @@ ath_ddr_initial_config(uint32_t refresh)
 		udelay(10);
 		ath_reg_wr_nf(DDR_CONTROL_ADDRESS, 0x20);
 		udelay(10);
-		/* prmsg("%s(%d): (", __func__, __LINE__); */
+		prmsg("%s(%d): (", __func__, __LINE__);
 
-		/* prmsg("16"); */
+		prmsg("16");
 		ctl_config =	CFG_DDR_CTL_CONFIG |
 				CPU_DDR_SYNC_MODE |
 				DDR_CTL_CONFIG_PAD_DDR2_SEL_SET(0x1) |
@@ -204,7 +204,7 @@ ath_ddr_initial_config(uint32_t refresh)
 
 		ath_reg_wr_nf(DDR_CTL_CONFIG_ADDRESS, ctl_config);
 
-		/* prmsg("bit) ddr2 init\n"); */
+		prmsg("bit) ddr2 init\n");
 		udelay(10);
 		break;
 	case ATH_MEM_DDR1:
@@ -316,6 +316,9 @@ ath_ddr_initial_config(uint32_t refresh)
 	ath_reg_wr(PMU1_ADDRESS, 0x633c8178);
 	// Set DDR2 Voltage to 1.8 volts
 	ath_reg_wr(PMU2_ADDRESS, PMU2_SWREGMSB_SET(0x40) | PMU2_PGM_SET(0x1) | PMU2_LDO_TUNE_SET(0x0));
+
+	ath_sys_frequency();
+
 	return type;
 #else	// !emulation
 	return 0;
@@ -331,15 +334,91 @@ ath_uart_freq(void)
 		return 25 * 1000 * 1000;
 	//}
 }
+#include "ar7240_soc.h"
 
-void
-ath_sys_frequency(uint32_t *cpu, uint32_t *ddr, uint32_t *ahb)
+
+static int ath_init_gpio()
+{
+#ifdef CONFIG_X750_4G
+       unsigned int old  = ath_reg_rd(AR7240_GPIO_OE);
+       unsigned int gpio_fun1  = ath_reg_rd(AR7240_GPIO_BASE+0x30);
+       gpio_fun1 &= ~0xff;//GPIO4
+       ath_reg_wr_nf(AR7240_GPIO_BASE+0x30,gpio_fun1);//GPIO4 seting to GPIO functionality
+       old  &= ~(1<<1);
+       ath_reg_wr(AR7240_GPIO_OE,old);
+       ath_reg_wr_nf(AR7240_GPIO_CLEAR, 1<<1);
+#elif  CONFIG_MIFI_V3
+	unsigned int gpio_fun1  = ath_reg_rd(AR7240_GPIO_BASE+0x30);
+	unsigned int gpio_oe = ath_reg_rd(AR7240_GPIO_OE);
+	ath_reg_wr_nf(AR7240_GPIO_BASE+0x2c,0X160000);//GPIO0-GPIO3 seting to GPIO functionality
+	gpio_fun1 &= ~0xff;//GPIO4
+	ath_reg_wr_nf(AR7240_GPIO_BASE+0x30,gpio_fun1);//GPIO4 seting to GPIO functionality
+	ath_reg_wr_nf(AR7240_GPIO_BASE+0x38,0);//GPIO12-GPIO15 seting to GPIO functionality
+	ath_reg_wr_nf(AR7240_GPIO_BASE+0x3C,0);//GPIO16-GPIO17 seting to GPIO functionality
+	gpio_oe &= ~((0x1<<0)|(0x1<<2)|(0x1<<4)|(0x1<<12)|(0x1<<13)|(0x1<<14)|(0x1<<15)|(0x1<<16)|(0x1<<17));
+	gpio_oe |= (0x1<<1)|(0x1<<3);//GPIO1 and GPIO3 only input
+	ath_reg_wr_nf(AR7240_GPIO_OE,gpio_oe);
+	//default value is low for ouput pin
+	ath_reg_wr_nf(AR7240_GPIO_BASE+0x10,(0x1<<0)|(0x1<<2)|(0x1<<4)|(0x1<<12)|(0x1<<13)|(0x1<<14)|(0x1<<15)|(0x1<<16)|(0x1<<17));
+#elif  CONFIG_X300B 
+        unsigned int gpio_fun1  = ath_reg_rd(AR7240_GPIO_BASE+0x30);
+        unsigned int gpio_oe = ath_reg_rd(AR7240_GPIO_OE);
+//        ath_reg_wr_nf(AR7240_GPIO_BASE+0x2c,0X160000);//GPIO0-GPIO3 seting to GPIO functionality
+        gpio_fun1 &= ~0xff;//GPIO4
+        ath_reg_wr_nf(AR7240_GPIO_BASE+0x30,gpio_fun1);//GPIO4 seting to GPIO functionality
+        ath_reg_wr_nf(AR7240_GPIO_BASE+0x38,0);//GPIO12-GPIO15 seting to GPIO functionality
+        ath_reg_wr_nf(AR7240_GPIO_BASE+0x3C,0);//GPIO16-GPIO17 seting to GPIO functionality
+        gpio_oe &= ~((0x1<<0)|(0x1<<2)|(0x1<<12)|(0x1<<14)|(0x1<<15)|(0x1<<16)|(0x1<<17));
+        gpio_oe |= (0x1<<1)|(0x1<<3)|(0x1<<4)|(0x1<<13);//GPIO1 and GPIO3 4 only input
+        ath_reg_wr_nf(AR7240_GPIO_OE,gpio_oe);
+        //default value 
+        ath_reg_wr_nf(AR7240_GPIO_BASE+0xc,(0x1<<15)|(0x1<<17)); // out high
+        ath_reg_wr_nf(AR7240_GPIO_BASE+0x10,(0x1<<0)|(0x1<<2)|(0x1<<12)|(0x1<<14)|(0x1<<16)); //out low
+#elif  CONFIG_XE300
+	unsigned int gpio_fun1  = ath_reg_rd(AR7240_GPIO_BASE+0x30);
+	unsigned int gpio_fun2  = ath_reg_rd(AR7240_GPIO_BASE+0x34);
+	unsigned int gpio_oe = ath_reg_rd(AR7240_GPIO_OE);
+	gpio_fun1 &= ~0xff;//GPIO4 set to GPIO
+	gpio_fun2 &= ~(0xff<<16);//GPIO10 set to GPIO
+	ath_reg_wr_nf(AR7240_GPIO_BASE+0x2c,0X160000);//GPIO0,1,3 set to GPIO functionality,GPIO2 set to UART
+	ath_reg_wr_nf(AR7240_GPIO_BASE+0x30,gpio_fun1);//GPIO4 set to GPIO functionality
+	ath_reg_wr_nf(AR7240_GPIO_BASE+0x34,gpio_fun2);//GPIO10 set to GPIO functionality
+	ath_reg_wr_nf(AR7240_GPIO_BASE+0x38,0);//GPIO12-GPIO15 set to GPIO functionality
+	ath_reg_wr_nf(AR7240_GPIO_BASE+0x3C,0);//GPIO16-GPIO17 set to GPIO functionality
+	//set GPIO direction
+	gpio_oe &= ~((0x1<<0)|(0x1<<1)|(0x1<<4)|(0x1<<10)|(0x1<<12)|(0x1<<13)|(0x1<<14)|(0x1<<15)|(0x1<<16)|(0x1<<17));
+	gpio_oe |= (0x1<<3);//Only GPIO3 is input
+	ath_reg_wr_nf(AR7240_GPIO_OE,gpio_oe);
+	//default value is low for output pin
+	ath_reg_wr_nf(AR7240_GPIO_BASE+0x10,(0x1<<0)|(0x1<<4)|(0x1<<14)|(0x1<<15)|(0x1<<16)|(0x1<<17));
+	//set all led to off
+	ath_reg_wr_nf(AR7240_GPIO_BASE+0xc,(0x1<<1)|(0x1<<10)|(0x1<<12)|(0x1<<13));
+#endif
+}
+
+#if defined(GPIO_HUB_RESET)
+
+void usb_hub_reset(void)
+{
+	unsigned int GPIO_HUB_OE  = ath_reg_rd(AR7240_GPIO_OE);
+	if(GPIO_HUB_OE & (1<<GPIO_HUB_RESET))
+	{
+		GPIO_HUB_OE  &= ~(1<<GPIO_HUB_RESET);
+		ath_reg_wr(AR7240_GPIO_OE,GPIO_HUB_OE);
+	}
+	ath_reg_wr_nf(AR7240_GPIO_CLEAR, 1<<GPIO_HUB_RESET);
+	udelay(10000);//10mS
+	ath_reg_wr_nf(AR7240_GPIO_SET, 1<<GPIO_HUB_RESET);
+}
+
+#endif
+void ath_sys_frequency()
 {
 #if !defined(CONFIG_ATH_EMULATION)
 	uint32_t pll, out_div, ref_div, nint, frac, clk_ctrl;
 #endif
-	uint32_t ref;
-	static uint32_t ath_cpu_freq, ath_ddr_freq, ath_ahb_freq;
+	uint32_t ref = ath_uart_freq();
+	uint32_t ath_cpu_freq = 0, ath_ddr_freq = 0, ath_ahb_freq = 0;
 
 	if (ath_cpu_freq)
 		goto done;
@@ -349,7 +428,7 @@ ath_sys_frequency(uint32_t *cpu, uint32_t *ddr, uint32_t *ahb)
 	ath_ddr_freq = 80000000;
 	ath_ahb_freq = 40000000;
 #else
-	/* prmsg("%s: ", __func__); */
+	prmsg("%s: ", __func__);
 
 	clk_ctrl = ath_reg_rd(ATH_DDR_CLK_CTRL);
 
@@ -360,7 +439,6 @@ ath_sys_frequency(uint32_t *cpu, uint32_t *ddr, uint32_t *ahb)
 	frac	= CPU_PLL_CONFIG_NFRAC_GET(pll);
 	pll = ref >> 6;
 	frac	= frac * pll / ref_div;
-	/* prmsg("cpu apb "); */
 	ath_cpu_freq = (((nint * (ref / ref_div)) + frac) >> out_div) /
 			(CPU_DDR_CLOCK_CONTROL_CPU_POST_DIV_GET(clk_ctrl) + 1);
 
@@ -371,7 +449,6 @@ ath_sys_frequency(uint32_t *cpu, uint32_t *ddr, uint32_t *ahb)
 	frac	= DDR_PLL_CONFIG_NFRAC_GET(pll);
 	pll = ref >> 10;
 	frac	= frac * pll / ref_div;
-	/* prmsg("ddr apb "); */
 	ath_ddr_freq = (((nint * (ref / ref_div)) + frac) >> out_div) /
 			(CPU_DDR_CLOCK_CONTROL_DDR_POST_DIV_GET(clk_ctrl) + 1);
 
@@ -383,12 +460,15 @@ ath_sys_frequency(uint32_t *cpu, uint32_t *ddr, uint32_t *ahb)
 			(CPU_DDR_CLOCK_CONTROL_AHB_POST_DIV_GET(clk_ctrl) + 1);
 	}
 #endif
-	prmsg("cpu %u ddr %u ahb %u\n",
-		ath_cpu_freq / 1000000,
-		ath_ddr_freq / 1000000,
-		ath_ahb_freq / 1000000);
+	ath_init_gpio();
+#if defined(GPIO_HUB_RESET)
+	usb_hub_reset();
+#endif
+
+
 done:
-	*cpu = ath_cpu_freq;
-	*ddr = ath_ddr_freq;
-	*ahb = ath_ahb_freq;
+        prmsg("cpu %u ddr %u ahb %u\n",
+                ath_cpu_freq / 1000000,
+                ath_ddr_freq / 1000000,
+                ath_ahb_freq / 1000000);
 }

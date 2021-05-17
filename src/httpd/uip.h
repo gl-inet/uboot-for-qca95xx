@@ -1053,6 +1053,7 @@ typedef struct {
 #define UIP_PROTO_TCP   6
 #define UIP_PROTO_UDP   17
 
+extern char uip_file_post_done;
 #if UIP_FIXEDADDR
 extern const u16_t uip_hostaddr[2];
 #else /* UIP_FIXEDADDR */

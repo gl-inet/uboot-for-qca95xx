@@ -21,7 +21,6 @@
 #include <config.h>
 #include <version.h>
 #include <atheros.h>
-
 #include "ar7240_soc.h"
 
 extern int ath_ddr_initial_config(uint32_t refresh);
@@ -47,7 +46,7 @@ extern int ath_ddr_find_size(void);
 	uint32_t        revid;							\
 	if(((revid=ath_reg_rd(RST_REVISION_ID_ADDRESS))&0xff0)==0x140) 		\
 	printf(a " - Honey Bee 1.%d", revid & 0xf);				\
-	else									\
+	else									\ 
 	printf(a " - Honey Bee 2.%d", revid & 0xf);
 #endif
 
@@ -57,7 +56,6 @@ ath_usb_initial_config(void)
 #define unset(a)	(~(a))
 
 	if (ath_reg_rd(RST_BOOTSTRAP_ADDRESS) & RST_BOOTSTRAP_TESTROM_ENABLE_MASK) {
-
 		ath_reg_rmw_set(RST_RESET_ADDRESS, RST_RESET_USB_HOST_RESET_SET(1));
 		udelay(1000);
 		ath_reg_rmw_set(RST_RESET_ADDRESS, RST_RESET_USB_PHY_RESET_SET(1));
@@ -95,6 +93,7 @@ ath_usb_initial_config(void)
 	udelay(10);
 }
 
+#ifndef CONFIG_FOR_GL_BOARD
 void ath_gpio_config(void)
 {
 	/* disable the CLK_OBS on GPIO_4 and set GPIO4 as input */
@@ -102,21 +101,21 @@ void ath_gpio_config(void)
 	ath_reg_rmw_clear(GPIO_OUT_FUNCTION1_ADDRESS, GPIO_OUT_FUNCTION1_ENABLE_GPIO_4_MASK);
 	ath_reg_rmw_set(GPIO_OUT_FUNCTION1_ADDRESS, GPIO_OUT_FUNCTION1_ENABLE_GPIO_4_SET(0x80));
 	ath_reg_rmw_set(GPIO_OE_ADDRESS, (1 << 4));
+	/* Set GPIO 13 as input for LED functionality to be OFF during bootup */
+
+	ath_reg_rmw_set(GPIO_OE_ADDRESS, (1 << 13));
 	/* Turn off JUMPST_LED and 5Gz LED during bootup */
 	ath_reg_rmw_set(GPIO_OE_ADDRESS, (1 << 15));
-
-        /* set gpio 12 13 14 to output */
-	ath_reg_rmw_clear(GPIO_OE_ADDRESS, (1 << 12));
-        ath_reg_rmw_clear(GPIO_OE_ADDRESS, (1 << 13));
-        ath_reg_rmw_clear(GPIO_OE_ADDRESS, (1 << 14));
-	/* turn off led 13 and 14, turn on 12 */
-        ath_reg_wr_nf(AR7240_GPIO_CLEAR, (1 << 12));
-        ath_reg_wr_nf(AR7240_GPIO_SET, (1 << 13));
-        ath_reg_wr_nf(AR7240_GPIO_SET, (1 << 14));
-	/* set reset button as input */
-	ath_reg_rmw_set(GPIO_OE_ADDRESS, (1 << 3));
+	ath_reg_rmw_set(GPIO_OE_ADDRESS, (1 << 12));
 }
+#else
+void ath_gpio_config(void)
+{
+}
+#endif
 
+void all_led_off();
+void status_led_on();
 int
 ath_mem_config(void)
 {
@@ -127,14 +126,14 @@ ath_mem_config(void)
 	type = ath_ddr_initial_config(CFG_DDR_REFRESH_VAL);
 
 	tap = ath_ddr_tap_cal();
-	/* prmsg("tap = 0x%p\n", tap); */
+	prmsg("tap = 0x%p\n", tap);
 
 	tap = (uint32_t *)0xbd001f10;
-	/* prmsg("Tap (low, high) = (0x%x, 0x%x)\n", tap[0], tap[1]); */
+	prmsg("Tap (low, high) = (0x%x, 0x%x)\n", tap[0], tap[1]);
 
 	tap = (uint32_t *)TAP_CONTROL_0_ADDRESS;
-	/* prmsg("Tap values = (0x%x, 0x%x, 0x%x, 0x%x)\n", */
-	/* 	tap[0], tap[2], tap[2], tap[3]); */
+	prmsg("Tap values = (0x%x, 0x%x, 0x%x, 0x%x)\n",
+		tap[0], tap[2], tap[2], tap[3]);
 
 	/* Take WMAC out of reset */
 	reg32 = ath_reg_rd(RST_RESET_ADDRESS);
@@ -142,9 +141,14 @@ ath_mem_config(void)
 	ath_reg_wr_nf(RST_RESET_ADDRESS, reg32);
 
 	ath_usb_initial_config();
-
 	ath_gpio_config();
+
 #endif /* !defined(CONFIG_ATH_EMULATION) */
+	all_led_off();
+
+#ifndef CONFIG_XE300 //XE300 not change status led
+	status_led_on();
+#endif
 
 	return ath_ddr_find_size();
 }
@@ -154,91 +158,240 @@ long int initdram(int board_type)
 	return (ath_mem_config());
 }
 
+#if defined(GPIO_BLE_RESET)
+#define AR7240_GPIO_FUNCTION 0x1804006C
+void disable_jtag()
+{
+	unsigned int tmp=0;
+	tmp = ath_reg_rd(AR7240_GPIO_FUNCTION);
+	ath_reg_wr_nf(AR7240_GPIO_FUNCTION, (tmp | 0x0002));
+}
+
+void ble_reset(void)
+{
+	unsigned int GPIO_BLE_OE  = ath_reg_rd(AR7240_GPIO_OE);
+	disable_jtag();
+	if(GPIO_BLE_OE & (1<<GPIO_BLE_RESET))
+	{
+		GPIO_BLE_OE  &= ~(1<<GPIO_BLE_RESET);
+		ath_reg_wr(AR7240_GPIO_OE,GPIO_BLE_OE);
+	}
+	ath_reg_wr_nf(AR7240_GPIO_CLEAR, 1<<GPIO_BLE_RESET);
+}
+#endif
+
 int	checkboard(args)
 {
-	/* board_str(CONFIG_BOARD_NAME); */
+	board_str(CONFIG_BOARD_NAME);
+#if defined(GPIO_BLE_RESET)
+	 ble_reset(); //GL -- close BLE
+#endif
 	return 0;
 }
 
-
+#if defined(GPIO_RESET)
 int reset_button_status(void)
 {
 	unsigned int gpio;
 
         gpio = ath_reg_rd(AR7240_GPIO_IN);
 
-#define GL_AR300M_GPIO_BTN_RESET 3
-	if (gpio & (1 << GL_AR300M_GPIO_BTN_RESET)) {
+	if (gpio & (1 << GPIO_RESET)) {
 		return(0);
 	} else {
 		return(1);
 	}
 }
+#else
+int reset_button_status(){return 1;}
+#endif
 
-#define GPIO_LED_STATUS	(1 << 12)
-#define GPIO_LED_GREEN	(1 << 13)
-#define GPIO_LED_RED	(1 << 14)
-
+#if defined(GPIO_LED_STATUS)
 void status_led_on(void)
 {
-        ath_reg_wr_nf(AR7240_GPIO_CLEAR, GPIO_LED_STATUS);
+	unsigned int led_GPIO_OE  = ath_reg_rd(AR7240_GPIO_OE);
+        if(led_GPIO_OE & (1<<GPIO_LED_STATUS))
+        {
+                led_GPIO_OE  &= ~(1<<GPIO_LED_STATUS);
+                ath_reg_wr(AR7240_GPIO_OE,led_GPIO_OE);
+        }
+        ath_reg_wr_nf(AR7240_GPIO_CLEAR, 1<<GPIO_LED_STATUS);
 }
 
 void status_led_off(void)
 {
-        ath_reg_wr_nf(AR7240_GPIO_SET, GPIO_LED_STATUS);
+        unsigned int led_GPIO_OE  = ath_reg_rd(AR7240_GPIO_OE);
+        if(led_GPIO_OE & (1<<GPIO_LED_STATUS))
+        {
+                led_GPIO_OE  &= ~(1<<GPIO_LED_STATUS);
+                ath_reg_wr(AR7240_GPIO_OE,led_GPIO_OE);
+        }
+        ath_reg_wr_nf(AR7240_GPIO_SET, 1<<GPIO_LED_STATUS);
 }
 
 void status_led_toggle(void)
 {
-        if (ath_reg_rd(AR7240_GPIO_OUT) & GPIO_LED_STATUS)
+        if (ath_reg_rd(AR7240_GPIO_OUT) & (1<<GPIO_LED_STATUS))
                 status_led_on();
         else
                 status_led_off();
 }
+#else
+void status_led_on(){}
+void status_led_off(){}
+void status_led_toggle(){}
+#endif
 
+#if defined(GPIO_LED_GREEN)
 void green_led_on(void)
 {
-        ath_reg_wr_nf(AR7240_GPIO_CLEAR, GPIO_LED_GREEN);
+        unsigned int led_GPIO_OE  = ath_reg_rd(AR7240_GPIO_OE);
+        if(led_GPIO_OE & (1<<GPIO_LED_GREEN))
+        {       
+                led_GPIO_OE  &= ~(1<<GPIO_LED_GREEN);
+                ath_reg_wr(AR7240_GPIO_OE,led_GPIO_OE);
+        }
+        ath_reg_wr_nf(AR7240_GPIO_CLEAR,1<< GPIO_LED_GREEN);
 }
 
 void green_led_off(void)
 {
-        ath_reg_wr_nf(AR7240_GPIO_SET, GPIO_LED_GREEN);
+        unsigned int led_GPIO_OE  = ath_reg_rd(AR7240_GPIO_OE);
+        if(led_GPIO_OE & (1<<GPIO_LED_GREEN))
+        {
+                led_GPIO_OE  &= ~(1<<GPIO_LED_GREEN);
+                ath_reg_wr(AR7240_GPIO_OE,led_GPIO_OE);
+        }
+        ath_reg_wr_nf(AR7240_GPIO_SET, 1<<GPIO_LED_GREEN);
 }
 
 void green_led_toggle(void)
 {
-        if (ath_reg_rd(AR7240_GPIO_OUT) & GPIO_LED_GREEN)
+        if (ath_reg_rd(AR7240_GPIO_OUT) & (1<<GPIO_LED_GREEN))
                 green_led_on();
         else
                 green_led_off();
 }
+#else
+void green_led_on(){}
+void green_led_off(){}
+void green_led_toggle(){}
+#endif
 
+#if defined(GPIO_LED_RED)
 void red_led_on(void)
 {
-        ath_reg_wr_nf(AR7240_GPIO_CLEAR, GPIO_LED_RED);
+        unsigned int led_GPIO_OE  = ath_reg_rd(AR7240_GPIO_OE);
+        if(led_GPIO_OE & (1<<GPIO_LED_RED))
+        {
+                led_GPIO_OE  &= ~(1<<GPIO_LED_RED);
+                ath_reg_wr(AR7240_GPIO_OE,led_GPIO_OE);
+        }
+        ath_reg_wr_nf(AR7240_GPIO_CLEAR, 1<<GPIO_LED_RED);
 }
 
 void red_led_off(void)
 {
-        ath_reg_wr_nf(AR7240_GPIO_SET, GPIO_LED_RED);
+        unsigned int led_GPIO_OE  = ath_reg_rd(AR7240_GPIO_OE);
+        if(led_GPIO_OE & (1<<GPIO_LED_RED))
+        {       
+                led_GPIO_OE  &= ~(1<<GPIO_LED_RED);
+                ath_reg_wr(AR7240_GPIO_OE,led_GPIO_OE);
+        }
+        ath_reg_wr_nf(AR7240_GPIO_SET, 1<<GPIO_LED_RED);
 }
 
 void red_led_toggle(void)
 {
-        if (ath_reg_rd(AR7240_GPIO_OUT) & GPIO_LED_RED)
+        if (ath_reg_rd(AR7240_GPIO_OUT) & (1<<GPIO_LED_RED))
                 red_led_on();
         else
                 red_led_off();
 }
+#else
+void red_led_on(){}
+void red_led_off(){}
+void red_led_toggle(){}
+#endif
 
+#if defined(GPIO_LED_LAN)
+void lan_led_on(void)
+{
+        unsigned int led_GPIO_OE  = ath_reg_rd(AR7240_GPIO_OE);
+        if(led_GPIO_OE & (1<<GPIO_LED_LAN))
+        {
+                led_GPIO_OE  &= ~(1<<GPIO_LED_LAN);
+                ath_reg_wr(AR7240_GPIO_OE,led_GPIO_OE);
+        }
+        ath_reg_wr_nf(AR7240_GPIO_CLEAR, 1<<GPIO_LED_LAN);
+}
 
+void lan_led_off(void)
+{
+        unsigned int led_GPIO_OE  = ath_reg_rd(AR7240_GPIO_OE);
+        if(led_GPIO_OE & (1<<GPIO_LED_LAN))
+        {
+                led_GPIO_OE  &= ~(1<<GPIO_LED_LAN);
+                ath_reg_wr(AR7240_GPIO_OE,led_GPIO_OE);
+        }
+        ath_reg_wr_nf(AR7240_GPIO_SET, 1<<GPIO_LED_LAN);
+}
+
+void lan_led_toggle(void)
+{
+        if (ath_reg_rd(AR7240_GPIO_OUT) & (1<<GPIO_LED_LAN))
+                red_led_on();
+        else
+                red_led_off();
+}
+#else
+void lan_led_on(){}
+void lan_led_off(){}
+void lan_led_toggle(){}
+#endif
+
+#if defined(GPIO_LED_4G)
+void g4_led_on(void)
+{
+	 unsigned int led_GPIO_OE  = ath_reg_rd(AR7240_GPIO_OE);
+        if(led_GPIO_OE & (1<<GPIO_LED_4G))
+        {
+                led_GPIO_OE  &= ~(1<<GPIO_LED_4G);
+                ath_reg_wr(AR7240_GPIO_OE,led_GPIO_OE);
+        }
+        ath_reg_wr_nf(AR7240_GPIO_CLEAR, 1<<GPIO_LED_4G);
+}
+
+void g4_led_off(void)
+{
+         unsigned int led_GPIO_OE  = ath_reg_rd(AR7240_GPIO_OE);
+        if(led_GPIO_OE & (1<<GPIO_LED_4G))
+        {
+                led_GPIO_OE  &= ~(1<<GPIO_LED_4G);
+                ath_reg_wr(AR7240_GPIO_OE,led_GPIO_OE);
+        }
+        ath_reg_wr_nf(AR7240_GPIO_SET, 1<<GPIO_LED_4G);
+}
+
+void g4_led_toggle(void)
+{
+        if (ath_reg_rd(AR7240_GPIO_OUT) & (1<<GPIO_LED_4G))
+                red_led_on();
+        else
+                red_led_off();
+}
+#else
+void g4_led_on(){}
+void g4_led_off(){}
+void g4_led_toggle(){}
+#endif
 void all_led_on(void)
 {
         status_led_on();
         green_led_on();
         red_led_on();
+	lan_led_on();
+	g4_led_on();
 }
 
 void all_led_off(void)
@@ -246,8 +399,22 @@ void all_led_off(void)
         status_led_off();
         green_led_off();
         red_led_off();
+	lan_led_off();
+	g4_led_off();
 }
 
+#ifdef CONFIG_XE300
+void exception_led_indicator()
+{
+	char i=0;
+	for(i=0;i<3;i++){
+		all_led_on();
+		udelay(500000);//500ms
+		all_led_off();
+		udelay(500000);//500ms
+	}
+}
+#endif
 void gpio17_select_out()
 {
 unsigned int tmp=0;
@@ -269,4 +436,3 @@ unsigned  int switch_boot_load()
 	return 0;
 	}
 }
-

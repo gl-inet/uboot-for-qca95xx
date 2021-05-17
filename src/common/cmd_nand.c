@@ -211,9 +211,7 @@ int do_nand(cmd_tbl_t * cmdtp, int flag, int argc, char *argv[])
 
 		printf("\nNAND erase: device %d offset 0x%x, size 0x%x ",
 		       nand_curr_device, off, size);
-		red_led_on();
 		ret = nand_erase(nand, off, size);
-		red_led_off();
 		printf("\n%s\n", ret ? "ERROR" : "OK");
 
 		return ret == 0 ? 0 : 1;
@@ -258,14 +256,11 @@ int do_nand(cmd_tbl_t * cmdtp, int flag, int argc, char *argv[])
 		printf("\nNAND %s: device %d offset 0x%x, size %u ... ",
 		       i ? "read" : "write", nand_curr_device, off, size);
 
-		green_led_on();
 		if (i)
 			ret = nand_read(nand, (loff_t)off, &size, (u_char *)addr);
 		else
 			ret = nand_write(nand, (loff_t)off, &size, (u_char *)addr);
 
-		green_led_off();
-		red_led_off();
 		printf(" %d bytes %s: %s\n", size,
 		       i ? "read" : "written", ret ? "ERROR" : "OK");
 

@@ -1,5 +1,5 @@
 /* 
- * Copyright (c) 2014 Qualcomm Atheros, Inc.
+ * Copyright (c) 2014, 2016 The Linux Foundation. All rights reserved.
  * 
  * Permission to use, copy, modify, and/or distribute this software for any
  * purpose with or without fee is hereby granted, provided that the above
@@ -35,7 +35,7 @@ int do_pll (cmd_tbl_t *cmdtp, int flag, int argc, char *argv[])
 	unsigned	*val;
 
 	if (argc != 2 && argc != 5) {
-		printf(cmdtp->usage);
+		printf ("Usage:\n%s\n", cmdtp->usage);
 		return -1;
 	}
 
@@ -59,7 +59,7 @@ int do_pll (cmd_tbl_t *cmdtp, int flag, int argc, char *argv[])
 		val[4] = simple_strtoul(argv[4], NULL, 16);
 		printf("Setting 0x%x 0x%x 0x%x 0x%x\n", val[1], val[2], val[3], val[4]);
 	} else {
-		printf(cmdtp->usage);
+		printf ("Usage:\n%s\n", cmdtp->usage);
 		return -1;
 	}
 
@@ -91,7 +91,7 @@ int do_srifpll (cmd_tbl_t *cmdtp, int flag, int argc, char *argv[])
 	unsigned	*val;
 
 	if (argc != 2 && argc != 3) {
-		printf(cmdtp->usage);
+		printf ("Usage:\n%s\n", cmdtp->usage);
 		return -1;
 	}
 
@@ -110,7 +110,7 @@ int do_srifpll (cmd_tbl_t *cmdtp, int flag, int argc, char *argv[])
 		val[2] = simple_strtoul(argv[2], NULL, 16);
 		printf("Setting 0x%x 0x%x\n", val[1], val[2]);
 	} else {
-		printf(cmdtp->usage);
+		printf ("Usage:\n%s\n", cmdtp->usage);
 		return -1;
 	}
 
@@ -130,7 +130,7 @@ int do_pll (cmd_tbl_t *cmdtp, int flag, int argc, char *argv[])
 	unsigned	*val;
 
 	if (argc != 2 && argc != 6) {
-		printf(cmdtp->usage);
+		printf("%s\n",cmdtp->usage);
 		return -1;
 	}
 
@@ -155,7 +155,7 @@ int do_pll (cmd_tbl_t *cmdtp, int flag, int argc, char *argv[])
 		val[5] = simple_strtoul(argv[5], NULL, 16);
 		printf("Setting 0x%x 0x%x 0x%x 0x%x 0x%x\n", val[1], val[2], val[3], val[4], val[5]);
 	} else {
-		printf(cmdtp->usage);
+		printf("%s\n",cmdtp->usage);
 		return -1;
 	}
 

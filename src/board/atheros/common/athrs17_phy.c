@@ -47,7 +47,11 @@ typedef enum {
 #define DRV_PRINT(DBG_SW,X)
 
 #define ATHR_LAN_PORT_VLAN          1
-#define ATHR_WAN_PORT_VLAN          2
+#define ATHR_LAN1_PORT_VLAN          2
+#define ATHR_LAN2_PORT_VLAN          3
+#define ATHR_LAN3_PORT_VLAN          4
+
+#define ATHR_WAN_PORT_VLAN          5
 
 #define ENET_UNIT_GE0 0
 #define ENET_UNIT_GE1 1
@@ -109,7 +113,7 @@ static athrPhyInfo_t athrPhyInfo[] = {
 		ENET_UNIT,
 		0,
 		ATHR_PHY1_ADDR,
-		ATHR_LAN_PORT_VLAN
+		ATHR_LAN1_PORT_VLAN
 	},
 	{
 		TRUE,   /* phy port 2 -- LAN port 2 */
@@ -117,7 +121,7 @@ static athrPhyInfo_t athrPhyInfo[] = {
 		ENET_UNIT,
 		0,
 		ATHR_PHY2_ADDR,
-		ATHR_LAN_PORT_VLAN
+		ATHR_LAN2_PORT_VLAN
 	},
 	{
 		TRUE,   /* phy port 3 -- LAN port 3 */
@@ -125,7 +129,7 @@ static athrPhyInfo_t athrPhyInfo[] = {
 		ENET_UNIT,
 		0,
 		ATHR_PHY3_ADDR,
-		ATHR_LAN_PORT_VLAN
+		ATHR_LAN3_PORT_VLAN
 	},
 	{
 		TRUE,   /* phy port 4 -- WAN port or LAN port 4 */
@@ -205,7 +209,7 @@ static void phy_mode_setup(void)
 
 void athrs17_vlan_config()
 {
-	athrs17_reg_write(S17_P0LOOKUP_CTRL_REG, 0x0014001e);
+	/*athrs17_reg_write(S17_P0LOOKUP_CTRL_REG, 0x0014001e);
 	athrs17_reg_write(S17_P0VLAN_CTRL0_REG, 0x10001);
 
 	athrs17_reg_write(S17_P1LOOKUP_CTRL_REG, 0x0014001d);
@@ -224,13 +228,44 @@ void athrs17_vlan_config()
 	athrs17_reg_write(S17_P5VLAN_CTRL0_REG, 0x20001);
 
 	athrs17_reg_write(S17_P6LOOKUP_CTRL_REG, 0x00140020);
-	athrs17_reg_write(S17_P6VLAN_CTRL0_REG, 0x20001);
+	athrs17_reg_write(S17_P6VLAN_CTRL0_REG, 0x20001);*/
+
+		int phy_addr=0,count=0;
+		unsigned int old_val=0;
+		count=sizeof(athrPhyInfo)/sizeof(athrPhyInfo[0]);
+
+		//port 0connect to CPU,set VID to 0x00
+		athrs17_reg_write(S17_P0VLAN_CTRL0_REG+phy_addr,0);
+		/*port0 connect to cpu,setup port1 - port5*/
+		for(phy_addr=1;phy_addr < count;phy_addr++){
+
+			/*set vid*/
+			old_val = athrs17_reg_read(S17_P0VLAN_CTRL0_REG+phy_addr*8);
+			old_val &= ~( (0xfff << 16) | 0xfff );
+			old_val |= (ATHR_VLAN_TABLE_SETTING(phy_addr) << 16) | ATHR_VLAN_TABLE_SETTING(phy_addr);
+			athrs17_reg_write(S17_P0VLAN_CTRL0_REG+phy_addr*8,old_val);
+
+			/*enable valn*/
+			old_val = athrs17_reg_read(S17_P0VLAN_CTRL1_REG+phy_addr*8);
+			old_val &= ~( 0x3 << 12 );
+			athrs17_reg_write(S17_P0VLAN_CTRL1_REG+phy_addr*8,old_val);
+
+		}
 
 
 }
 
 void athrs17_reg_init_wan(void)
 {
+	uint32_t sgmii_ctrl_value;
+
+	/* SGMII control reg value based on switch id  */
+	if ((athrs17_reg_read(S17_MASK_CTRL_REG) & 0xFFFF) >= S17C_V1_DEVICEID) {
+		sgmii_ctrl_value = 0xc74164de;
+	} else {
+		sgmii_ctrl_value = 0xc74164d0;
+	}
+
 
 #ifdef ATH_S17_MAC0_SGMII
 	athrs17_reg_write(S17_P6PAD_MODE_REG,0x07600000);
@@ -240,7 +275,7 @@ void athrs17_reg_init_wan(void)
            athrs17_reg_read(S17_P6PAD_MODE_REG)|S17_MAC6_SGMII_EN);
 #endif
 	athrs17_reg_write(S17_P6STATUS_REG, S17_PORT_STATUS_AZ_DEFAULT);
-	athrs17_reg_write(S17_SGMII_CTRL_REG , 0xc74164d0); /* SGMII control */
+	athrs17_reg_write(S17_SGMII_CTRL_REG , sgmii_ctrl_value); /* SGMII control */
          
         athrs17_vlan_config();
 	printf("%s done\n",__func__);
@@ -254,12 +289,12 @@ void athrs17_reg_init()
 	/* if using header for register configuration, we have to     */
 	/* configure s17 register after frame transmission is enabled */
 
-	if ((athrs17_reg_read(S17_MASK_CTRL_REG) & 0xFFFF) == S17C_DEVICEID){
+	if ((athrs17_reg_read(S17_MASK_CTRL_REG) & 0xFFFF) >= S17C_V1_DEVICEID) {
 		sgmii_ctrl_value = 0xc74164de;
-	}else{
+	} else {
 		sgmii_ctrl_value = 0xc74164d0;
 	}
-	if (athr17_init_flag){
+	if (athr17_init_flag) {
 		return;
 	}
 
@@ -271,7 +306,7 @@ void athrs17_reg_init()
 	if (is_drqfn()) {
 		athrs17_reg_write(S17_P0PAD_MODE_REG, S17_MAC0_SGMII_EN);
 		athrs17_reg_write(S17_SGMII_CTRL_REG , sgmii_ctrl_value); /* SGMII control  */
-    } else {
+	} else {
 		athrs17_reg_write(S17_GLOFW_CTRL1_REG,	0x7f7f7f7f);
 		/* 
                  * If defined S17 Mac0 sgmii val of 0x4(S17_P0PAD_MODE_REG)
@@ -282,10 +317,10 @@ void athrs17_reg_init()
 #else
 		athrs17_reg_write(S17_P0PAD_MODE_REG,	0x07680000);
 #endif
-		athrs17_reg_write(S17_P6PAD_MODE_REG,	0x01000000);		
+		athrs17_reg_write(S17_P6PAD_MODE_REG,	0x01000000);
 	}
 #endif	/* CFG_ATH_GMAC_NMACS == 1 */
-	
+
 /*
  * Values suggested by the swich team when s17 in sgmii configuration
  * operates in forced mode.
@@ -309,14 +344,25 @@ void athrs17_reg_init()
 			phy_reg_write(0, phy_addr, 0x1e, 0x68a0);
 		}
 	}
+
+	/* AR8337/AR8334 v1.0 fixup */
+	if ((athrs17_reg_read(0x0) & 0xffff) == S17C_V1_DEVICEID) {
+		for (phy_addr = 0x0; phy_addr <= ATHR_PHY_MAX; phy_addr++) {
+			/* Turn On Gigabit Clock */
+			phy_reg_write(0, phy_addr, 0x1d, 0x3d);
+			phy_reg_write(0, phy_addr, 0x1e, 0x6820);
+		}
+		printf("Set up QCA8337 V1.0 fixup\n");
+	}
+
 #if CONFIG_S17_SWMAC6_CONNECTED
         printf ("Configuring Mac6 of s17 to slave scorpion\n");
 	athrs17_reg_write(S17_P6PAD_MODE_REG, S17_MAC6_RGMII_EN | S17_MAC6_RGMII_TXCLK_DELAY | \
                               S17_MAC6_RGMII_RXCLK_DELAY | (1 << S17_MAC6_RGMII_TXCLK_SHIFT) | \
                               (2 << S17_MAC6_RGMII_RXCLK_SHIFT));
-	athrs17_reg_write(S17_P6STATUS_REG, 0x7e);	
-        athrs17_vlan_config();
+	athrs17_reg_write(S17_P6STATUS_REG, 0x7e);
 #endif
+	athrs17_vlan_config();
 	athr17_init_flag = 1;
 	printf("%s: complete\n",__func__);
 }
@@ -372,7 +418,7 @@ athrs17_phy_setup(int ethUnit)
 
 	/* See if there's any configuration data for this enet */
 	/* start auto negogiation on each phy */
-	if (is_drqfn()) 
+	if (is_drqfn())
 		ethUnit=0;
 	for (phyUnit=0; phyUnit < ATHR_PHY_MAX; phyUnit++) {
 		if (!ATHR_IS_ETHUNIT(phyUnit, ethUnit)) {

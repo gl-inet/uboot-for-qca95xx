@@ -40,8 +40,8 @@ flash_get_geom (flash_info_t *flash_info)
 		flash_info->protect[i] = 0;
 	}
 
-	printf ("Nor Flash:  %d MB, sector count = %d\n",
-                FLASH_SIZE, flash_info->sector_count);
+	printf ("flash size %dMB, sector count = %d\n",
+			FLASH_SIZE, flash_info->sector_count);
 
 	return (flash_info->size);
 }

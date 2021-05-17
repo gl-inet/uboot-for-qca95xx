@@ -149,10 +149,14 @@ LIBS += drivers/libdrivers.a
 #endif
 #LIBS += drivers/sk98lin/libsk98lin.a
 #endif
-
+ifdef CONFIG_GL_RSA
+LIBS += lib_rsa/librsa.a
+endif
 LIBS += net/libnet.a
 LIBS += rtc/librtc.a
 LIBS += httpd/libhttpd.a
+LIBS += uip/libuip.a
+
 #LIBS += post/libpost.a post/cpu/libcpu.a
 LIBS += $(BOARDLIBS)
 
@@ -185,7 +189,7 @@ SUBDIRS	= tools \
 #########################################################################
 #########################################################################
 
-ALL = u-boot.srec u-boot.bin System.map
+ALL = u-boot.srec u-boot.bin System.map prog_free.bin
 
 ifeq ($(COMPRESSED_UBOOT),1)
 all:		$(ALL) tuboot.bin
@@ -283,6 +287,9 @@ System.map:	u-boot
 		@$(NM) $< | \
 		grep -v '\(compiled\)\|\(\.o$$\)\|\( [aUw] \)\|\(\.\.ng$$\)\|\(LASH[RL]DI\)' | \
 		sort > System.map
+
+prog_free.bin:
+		$(MAKE) -C tools/spi_prog || exit 1
 
 #########################################################################
 else
@@ -2038,8 +2045,23 @@ board953x_config		:	unconfig
 	@echo '#define __CONFIG_BOARD_NAME $(CFG_BOARD_TYPE)' >>include/config.h
 	@echo '#define CONFIG_BOARD_NAME "$(CFG_BOARD_TYPE)"' >>include/config.h
 	@echo "#define BUILD_VERSION "\"$(BUILDVERSION)\" >>include/config.h
-	@echo '#define ATH_SPI_NAND	1' >>include/config.h
-	@echo '#define CFG_FLASH_SIZE 0x001000000' >>include/config.h
+ifdef EXT_ADDR_SUPPORT
+	@echo '#define ENABLE_EXT_ADDR_SUPPORT	$(EXT_ADDR_SUPPORT)'	>>include/config.h
+endif
+	@sed -i "s/version:.*;/version:`date +%y.%m.%d`\";/g" $(TOPDIR)/httpd/vendors/general/a.js
+	@sed -i "s/version:.*;/version:`date +%y.%m.%d`\";/g" $(TOPDIR)/httpd/vendors/general/u.js
+	@sed -i "s/version:.*</version:`date +%y.%m.%d`</g" $(TOPDIR)/httpd/vendors/general/uboot.html
+	@sed -i "s/version:.*</version:`date +%y.%m.%d`</g" $(TOPDIR)/httpd/vendors/general/art.html
+	@sed -i "s/version:.*</version:`date +%y.%m.%d`</g" $(TOPDIR)/httpd/vendors/general/index.html
+	@sed -i "s/version:.*</version:`date +%y.%m.%d`</g" $(TOPDIR)/httpd/ar300m-index.html
+	@sed -i "s/version:.*</version:`date +%y.%m.%d`</g" $(TOPDIR)/httpd/index.html
+ifdef BOOT_ADDR
+	@echo '#define GL_BOOT_ADDR	$(BOOT_ADDR)'	>>include/config.h
+endif
+
+ifdef ART_ADDR
+	@echo '#define GL_ART_ADDR	$(ART_ADDR)'	>>include/config.h
+endif
 
 ifdef pll
 	@echo '#define CFG_PLL_FREQ		$(pll)'	>>include/config.h
@@ -2079,6 +2101,33 @@ ifdef FLASH_SIZE
 endif
 ifdef ATH_SPI_CS1_GPIO
 	@echo "#define CONFIG_ATH_SPI_CS1_GPIO $(ATH_SPI_CS1_GPIO)" >>include/config.h
+endif
+ifdef GPIO_LED_STATUS
+	@echo "#define GPIO_LED_STATUS $(GPIO_LED_STATUS)" >>include/config.h
+endif
+ifdef GPIO_LED_GREEN
+	@echo "#define GPIO_LED_GREEN $(GPIO_LED_GREEN)" >>include/config.h
+endif
+ifdef GPIO_LED_RED
+	@echo "#define GPIO_LED_RED $(GPIO_LED_RED)" >>include/config.h
+endif
+ifdef GPIO_LED_LAN
+	@echo "#define GPIO_LED_LAN $(GPIO_LED_LAN)" >>include/config.h
+endif
+ifdef GPIO_LED_4G
+	@echo "#define GPIO_LED_4G $(GPIO_LED_4G)" >>include/config.h
+endif
+ifdef GPIO_RESET
+	@echo "#define GPIO_RESET $(GPIO_RESET)" >>include/config.h
+endif
+ifdef GPIO_BLE_RESET
+	@echo "#define GPIO_BLE_RESET $(GPIO_BLE_RESET)" >> include/config.h
+endif
+ifdef CONFIG_GL_RSA
+	@echo "#define CONFIG_GL_RSA $(CONFIG_GL_RSA)" >> include/config.h
+endif
+ifdef GPIO_HUB_RESET
+	@echo "#define GPIO_HUB_RESET $(GPIO_HUB_RESET)" >> include/config.h
 endif
 	@./mkconfig -a board953x mips mips board953x atheros
 
@@ -3267,6 +3316,23 @@ board956x_config: unconfig
 	@echo '#define CONFIG_'`echo $(CFG_BOARD_TYPE) | tr [a-z] [A-Z] | sed s/-/_/g`'	1' >>include/config.h
 	@echo '#define __CONFIG_BOARD_NAME $(CFG_BOARD_TYPE)' >>include/config.h
 	@echo '#define CONFIG_BOARD_NAME "$(CFG_BOARD_TYPE)"' >>include/config.h
+ifdef EXT_ADDR_SUPPORT
+	@echo '#define ENABLE_EXT_ADDR_SUPPORT	$(EXT_ADDR_SUPPORT)'	>>include/config.h
+endif
+	@sed -i "s/version:.*;/version:`date +%y.%m.%d`\";/g" $(TOPDIR)/httpd/vendors/general/a.js
+	@sed -i "s/version:.*;/version:`date +%y.%m.%d`\";/g" $(TOPDIR)/httpd/vendors/general/u.js
+	@sed -i "s/version:.*</version:`date +%y.%m.%d`</g" $(TOPDIR)/httpd/vendors/general/uboot.html
+	@sed -i "s/version:.*</version:`date +%y.%m.%d`</g" $(TOPDIR)/httpd/vendors/general/art.html
+	@sed -i "s/version:.*</version:`date +%y.%m.%d`</g" $(TOPDIR)/httpd/vendors/general/index.html
+
+ifdef BOOT_ADDR
+	@echo '#define GL_BOOT_ADDR	$(BOOT_ADDR)'	>>include/config.h
+endif
+
+ifdef ART_ADDR
+	@echo '#define GL_ART_ADDR	$(ART_ADDR)'	>>include/config.h
+endif
+
 ifdef pll
 	@echo '#define CFG_PLL_FREQ		$(pll)'	>>include/config.h
 else
@@ -3283,12 +3349,19 @@ ifneq (,$(findstring $(CFG_BOARD_TYPE),ap151 ap151-020 tb754)) #{
 	@echo '#define CFG_ATH_GMAC_NMACS	2'	>>include/config.h
 	@echo '#define CFG_ATH_GE1_IS_CONNECTED 1' 	>>include/config.h
 endif #}
-ifneq (,$(findstring $(CFG_BOARD_TYPE), ap152 tb755)) #{
+ifneq (,$(findstring $(CFG_BOARD_TYPE), ap152 tb755 ar750s)) #{
 	@echo '#define CFG_ATH_GMAC_NMACS	1'	>>include/config.h
 	@echo '#define CFG_ATH_GE1_IS_CONNECTED 1' 	>>include/config.h
 	@echo '#define CONFIG_ATHRS_GMAC_SGMII  1'      >>include/config.h
 	@echo '#define ATH_S17_MAC0_SGMII	1'	>>include/config.h
 endif #}
+ifneq (,$(findstring $(CFG_BOARD_TYPE), ap152 tb755 x1200)) #{
+	@echo '#define CFG_ATH_GMAC_NMACS	1'	>>include/config.h
+	@echo '#define CFG_ATH_GE1_IS_CONNECTED 1' 	>>include/config.h
+	@echo '#define CONFIG_ATHRS_GMAC_SGMII  1'      >>include/config.h
+	@echo '#define ATH_S17_MAC0_SGMII	1'	>>include/config.h
+endif #}
+
 ifeq ($(ATH_DUAL_FLASH),1)
 	@echo '#define CONFIG_ATH_NAND_SUPPORT	1'	>>include/config.h
 ifeq ($(ATH_SPI_NAND),1)
@@ -3297,9 +3370,13 @@ ifeq ($(ATH_SPI_NAND),1)
 endif
 endif
 
-ifneq (,$(findstring $(CFG_BOARD_TYPE), ap152)) #{
+ifneq (,$(findstring $(CFG_BOARD_TYPE), ap152 ar750s)) #{
 	@echo '#define UART_RX18_TX22           1'      >>include/config.h
 endif #}
+ifneq (,$(findstring $(CFG_BOARD_TYPE), ap152 x1200)) #{
+	@echo '#define UART_RX18_TX22           1'      >>include/config.h
+endif #}
+
 ifeq ($(CFG_BOARD_TYPE), ap151-020)
 	@echo '#define UART_RX24_TX20           1'      >>include/config.h
 endif 
@@ -3320,7 +3397,7 @@ ifneq (,$(findstring $(CFG_BOARD_TYPE),dragonflyemu)) #{
 	@echo '#define CONFIG_ATHRS_GMAC_SGMII  1'      >>include/config.h
 endif #}
 
-ifeq ($(CFG_BOARD_TYPE), ap152)
+ifeq ($(CFG_BOARD_TYPE), ap152 ar750s)
 	@echo '#define CONFIG_ATHRS_GMAC_SGMII	1'	>>include/config.h
 endif
 
@@ -3342,6 +3419,24 @@ endif
 
 ifdef FLASH_SIZE
 	@echo '#define FLASH_SIZE	$(FLASH_SIZE)'	>>include/config.h
+endif
+ifdef GPIO_LED_STATUS
+	@echo "#define GPIO_LED_STATUS $(GPIO_LED_STATUS)" >>include/config.h
+endif
+ifdef GPIO_LED_GREEN
+	@echo "#define GPIO_LED_GREEN $(GPIO_LED_GREEN)" >>include/config.h
+endif
+ifdef GPIO_LED_RED
+	@echo "#define GPIO_LED_RED $(GPIO_LED_RED)" >>include/config.h
+endif
+ifdef GPIO_LED_LAN
+	@echo "#define GPIO_LED_LAN $(GPIO_LED_LAN)" >>include/config.h
+endif
+ifdef GPIO_LED_4G
+	@echo "#define GPIO_LED_4G $(GPIO_LED_4G)" >>include/config.h
+endif
+ifdef GPIO_RESET
+	@echo "#define GPIO_RESET $(GPIO_RESET)" >>include/config.h
 endif
 	@./mkconfig -a board956x mips mips board956x atheros
 

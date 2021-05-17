@@ -90,6 +90,52 @@ static	ulong	base_address = 0;
  *	md{.b, .w, .l} {addr} {len}
  */
 #define DISP_LINE_LEN	16
+
+uint do_show_kernel( cmd_tbl_t *cmdtp, int flag, int argc, char *argv[])
+{
+    char linebuf[4];
+    uint *uip = (uint*)linebuf;
+    uint k_size = 0;
+    uint i = 0;
+    uint addr = 0x81000000;
+	if (argc < 2) {
+		printf ("Usage:\n%s\n", cmdtp->usage);
+		return 1;
+	}
+
+    addr = simple_strtoul(argv[1], NULL, 16);
+
+    for(i=0;i<0xffff;i++){   
+#ifdef CONFIG_HAS_DATAFLASH
+        if (read_dataflash(addr, 4 , linebuf) ==  1){
+
+            if((*uip)==0x55424923){
+                k_size=0x10000 * i ;
+                break;
+            }
+            else{
+                addr+=0x10000;    
+            }
+        
+        }else{  
+#endif
+            printf("%08lx:  %08x  \n",addr, (*uip = *((uint *)addr)));
+            if((*uip)==0x55424923){
+                printf("%08lx:  %08x  \n",addr, (*uip = *((uint *)addr)));
+                k_size=0x10000 * i ;
+                break;
+            }
+            else{
+                addr+=0x10000;    
+            }
+#ifdef CONFIG_HAS_DATAFLASH
+		}
+#endif
+    }
+    printf("k_size:0x%08lx  \n",k_size);
+    return k_size;
+}
+
 int do_mem_md ( cmd_tbl_t *cmdtp, int flag, int argc, char *argv[])
 {
 	ulong	addr, length;
@@ -97,7 +143,6 @@ int do_mem_md ( cmd_tbl_t *cmdtp, int flag, int argc, char *argv[])
 	u_char	*cp;
 	int	size;
 	int rc = 0;
-
 	/* We use the last specified parameters, unless new ones are
 	 * entered.
 	 */
@@ -1299,6 +1344,10 @@ int do_mem_mct (cmd_tbl_t *cmdtp, int flag, int argc, char *argv[])
 	if (argc > 1) {
 		size = simple_strtoul(argv[1], NULL, 16);
 	} 
+	else {
+		printf ("Usage:\n%s\n", cmdtp->usage);
+		return -1;
+	}
 	
 	/* Clean all information memory locations */
 	for (i = 0; i < 0xb0; i+=4) {
@@ -1580,6 +1629,12 @@ int test_algorithm_t(unsigned int mem_type, unsigned int pattern)
 }
 
 /**************************************************/
+U_BOOT_CMD(
+	sk,     2,     1,      do_show_kernel,
+	"sk     - display kernel size\n",
+	"ex;    sk 0x81000000\n"
+);
+
 U_BOOT_CMD(
 	md,     3,     1,      do_mem_md,
 	"md      - memory display\n",

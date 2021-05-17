@@ -248,17 +248,17 @@ int eth_initialize(bd_t *bis)
 		char *ethprime = getenv ("ethprime");
 
 		do {
-			/* if (eth_number) */
-			/* 	puts (", "); */
+			if (eth_number)
+				puts (", ");
 
-			/* printf("%s", dev->name); */
+			printf("%s", dev->name);
 
 			if (ethprime && strcmp (dev->name, ethprime) == 0) {
 				eth_current = dev;
 				puts (" [PRIME]");
 			}
 
-			sprintf(enetvar, eth_number ? "eth%daddr" : "ethaddr", eth_number);
+			snprintf(enetvar, sizeof(enetvar), eth_number ? "eth%daddr" : "ethaddr", eth_number);
 			tmp = getenv (enetvar);
 
 			for (i=0; i<6; i++) {
@@ -304,7 +304,7 @@ int eth_initialize(bd_t *bis)
 			setenv("ethact", NULL);
 #endif
 
-		/* putc ('\n'); */
+		putc ('\n');
 	}
 
 	return eth_number;
@@ -355,14 +355,14 @@ int eth_init(bd_t *bis)
 	old_current = eth_current;
 	do {
 #if !defined(CFG_ATHRS26_PHY) && !defined(CFG_ATHRHDR_EN)
-		debug ("Trying %s\n", eth_current->name);
+	//	debug ("Trying %s\n", eth_current->name);
 #endif
 		if (eth_current->init(eth_current, bis)) {
 			eth_current->state = ETH_STATE_ACTIVE;
 
 			return 1;
 		}
-		debug  ("FAIL\n");
+	//	debug  ("FAIL\n");
 
 		eth_try_another(0);
 	} while (old_current != eth_current);

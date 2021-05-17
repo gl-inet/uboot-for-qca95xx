@@ -39,6 +39,7 @@
 /* for isdigit() */
 #include <linux/ctype.h>
 #include <asm-mips/string.h>
+#include <config.h>
 
 #ifdef CONFIG_SILENT_CONSOLE
 DECLARE_GLOBAL_DATA_PTR;
@@ -67,18 +68,13 @@ static int abortboot(int);
 
 char        console_buffer[CFG_CBSIZE];		/* console I/O buffer	*/
 
-#ifndef CONFIG_CMDLINE_EDITING
-static char * delete_char (char *buffer, char *p, int *colp, int *np, int plen);
 static char erase_seq[] = "\b \b";		/* erase sequence	*/
 static char   tab_seq[] = "        ";		/* used to expand TABs	*/
-#endif /* CONFIG_CMDLINE_EDITING */
 
 #ifdef CONFIG_BOOT_RETRY_TIME
 static uint64_t endtime = 0;  /* must be set, default is instant timeout */
 static int      retry_time = -1; /* -1 so can call readline before main_loop */
 #endif
-
-
 
 #define	endtick(seconds) (get_ticks() + (uint64_t)(seconds) * get_tbclk())
 
@@ -227,11 +223,53 @@ static __inline__ int abortboot(int bootdelay)
 #ifdef CONFIG_MENUKEY
 static int menukey = 0;
 #endif
+static ulong my_atoi(const char *c);
+extern char firmware_name[16];
+static int hex_str_to_num(char *str, int length)
+{
+    char revstr[16] = {0}; //根据十六进制字符串的长度，这里注意数组不要越界
+    int num[16] = {0};
+    int count = 1;
+    int result = 0;
+           
+    strcpy(revstr, str);
 
+    for(int i = length - 1; i >= 0; i--)
+    {
+        if((revstr[i] >= '0') && (revstr[i] <= '9')){
+            num[i] = revstr[i] - 48;   //字符0的ASCII值为48                  
+        }
+        else if((revstr[i] >= 'a') && (revstr[i] <= 'f')){
+            num[i] = revstr[i] - 'a' + 10;
+        }
+        else if((revstr[i] >= 'A') && (revstr[i] <= 'F')){
+            num[i] = revstr[i] - 'A' + 10;
+        }
+        else{
+            num[i] = 0;                 
+        }
+
+        result += num[i] * count;
+        count *= 16; //十六进制(如果是八进制就在这里乘以8)           
+    }
+
+    return result;
+}
+
+extern uint show_kernel(uint addr);
+extern char gl_set_uip_info();
+extern void gl_upgrade_probe();
+extern void gl_upgrade_listen();
+extern void exception_led_indicator();
+
+extern char gl_probe_upgrade;
 static __inline__ int abortboot(int bootdelay)
 {
 	int abort = 0;
-
+    char tftp_command[50] = "0";
+    char cp_command[50] = "0";
+    char nandw_command[50] = "0";
+    char erase_command[50] = "0";
 #ifdef CONFIG_SILENT_CONSOLE
 	if (gd->flags & GD_FLG_SILENT) {
 		/* Restore serial console */
@@ -239,12 +277,11 @@ static __inline__ int abortboot(int bootdelay)
 		console_assign (stderr, "serial");
 	}
 #endif
-	 gpio17_select_out();
-
-
 #ifdef CONFIG_MENUPROMPT
 	printf(CONFIG_MENUPROMPT, bootdelay);
 #else
+
+   // run_command("dhcpd start", 0);
 	printf("Hit 'gl' to stop autoboot: %2d ", bootdelay);
 #endif
 
@@ -262,12 +299,72 @@ static __inline__ int abortboot(int bootdelay)
 	}
 #endif
 	char tmp_flag=0,tmp_key=0;
-	while ((bootdelay > 0) && (!abort)) {
-		int i;
 
-	
-		/* delay 200 * 10ms */
+	while ((bootdelay >= 0) && (!abort)) {
+		int i;
+		gl_probe_upgrade = gl_set_uip_info();
+
+		/* delay 100 * 10ms */
 		for (i=0; !abort && i<100; ++i) {
+			if(gl_probe_upgrade){
+				gl_upgrade_probe();
+				gl_upgrade_listen();
+			}
+				
+#if 0
+		
+            if(update_msg()){
+                abort  = 1; 
+                bootdelay = 1;
+                printf("V 1.0.0\n");
+                sprintf(tftp_command,"tftpboot 0x81000000 %s",firmware_name);
+                printf("%s\n",tftp_command);
+                run_command(tftp_command, 0);
+                printf("filesize:%d \n",hex_str_to_num(getenv("filesize"),strlen(getenv("filesize"))));
+                if(hex_str_to_num(getenv("filesize"),strlen(getenv("filesize")))<=0){
+                    printf("file err\n");
+                    break;
+                }
+                if(strstr(firmware_name,".bin")){
+                    if(327680<hex_str_to_num(getenv("filesize"),strlen(getenv("filesize")))){ 
+
+                        sprintf(erase_command,"erase %s  $filesize",getenv("firmware_addr");
+                        sprintf(cp_command,"cp.b 0x81000000  %s $filesize",getenv("firmware_addr");
+                        printf("%s\n",erase_command);
+                        printf("%s\n",cp_command);
+                    }
+                    else{
+                        sprintf(erase_command,"erase %s +%s",getenv("uboot_addr"),getenv("uboot_size"));
+                        sprintf(cp_command,"cp.b 0x81000000 %s %s",getenv("uboot_addr"),getenv("filesize"));
+                        printf("%s\n",erase_command);
+                        printf("%s\n",cp_command);
+                    }
+                    run_command(erase_command, 0);
+                    run_command(cp_command, 0);
+                }
+                else if(strstr(firmware_name,".img")){
+                    sprintf(erase_command,"erase %s +0x%x",getenv("firmware_addr"),show_kernel(0x81000000));
+                    sprintf(cp_command,"cp.b 0x81000000  %s 0x%x",getenv("firmware_addr"),show_kernel(0x81000000));
+                    printf("%s\n",erase_command);
+                    printf("%s\n",cp_command);
+                    run_command(erase_command, 0);
+                    run_command(cp_command, 0);
+                    run_command("nand erase && nand write 0x81200000 0 0xae0000" , 0);
+                }
+                else if(strstr(firmware_name,".ubi")){
+                    sprintf(erase_command,"erase %s +0x%x",getenv("firmware_addr"),show_kernel(0x81000000));
+                    sprintf(cp_command,"cp.b 0x81000000  %s 0x%x",getenv("firmware_addr"),show_kernel(0x81000000));
+                    printf("%s\n",erase_command);
+                    printf("%s\n",cp_command);
+                    run_command(erase_command, 0);
+                    run_command(cp_command, 0);
+                }
+                printf("Update Done");
+                send_U_G_ok(); 
+                run_command("res", 0);
+                break;
+            }
+#endif
 			if (tstc()) {	/* we got a key press	*/
 				//abort  = 1;	/* don't auto boot	*/
 				//bootdelay = 0;	/* no more delay	*/
@@ -275,23 +372,26 @@ static __inline__ int abortboot(int bootdelay)
 				menukey = getc();
 # else
 				//(void) getc();  /* consume input	*/
-				tmp_key = getc();
-				if(tmp_key == 'g'){
-					tmp_flag = 1;
-					break;
-				}
-				if((tmp_flag == 1)&&(tmp_key == 'l'))
-				{
-					abort  = 1;	/* don't auto boot	*/
-					bootdelay = 1;	/* no more delay	*/
-					break;					
-				}
+                                tmp_key = getc();
+                                if(tmp_key == 'g'){
+                                        tmp_flag = 1;
+                                        break;
+                                }
+                                if((tmp_flag == 1)&&(tmp_key == 'l'))
+                                {
+                                        abort  = 1;     /* don't auto boot      */
+                                        bootdelay = 1;  /* no more delay        */
+										gl_probe_upgrade = 0;
+                                        eth_halt();
+                                        break;
+                                }
 # endif
 				break;
 			}
 			udelay (10000);
 		}
 		--bootdelay;
+
 		printf ("\b\b\b%2d ", bootdelay);
 	}
 
@@ -318,7 +418,7 @@ static __inline__ int abortboot(int bootdelay)
 static ulong my_atoi(const char *c)
 {
         ulong value = 0;
-        int sign = 1;
+        int sign = 1; 
         if( *c == '+' || *c == '-' )
         {
                 if( *c == '-' ) sign = -1;
@@ -344,14 +444,20 @@ unsigned long bootcount_load(void)
 
 void bootcount_store(ulong count)
 {
+#ifdef CONFIG_AR300M
         char buf[10];
         sprintf(buf, "%ld", count);
         setenv("bootcount", buf);
         saveenv();
+        run_command("protect off all",0);
+        green_led_off();
+        red_led_off();
+#endif
 }
 
 extern int reset_button_status(void);
 
+char rst_key_5s = 0;
 void main_loop (void)
 {
 #ifndef CFG_HUSH_PARSER
@@ -359,6 +465,28 @@ void main_loop (void)
 	int len;
 	int rc = 1;
 	int flag;
+#endif
+#ifdef GPIO_SIM_SELECT //sim select 0:sim1 1:sim2
+	//printf("Function:%s Line:%d GPIO_SIM_SELECT=%d\n",__func__, __LINE__, GPIO_SIM_SELECT);
+	set_gpio_value(GPIO_SIM_SELECT,0);   
+#endif
+
+#ifdef GPIO_4G1_POWER //enable 4G modem 1 power 0:enable 1:disable
+	//printf("Function:%s Line:%d GPIO_4G1_POWER=%d\n",__func__, __LINE__, GPIO_4G1_POWER);
+	set_gpio_value(GPIO_4G1_POWER,0);   
+#endif
+
+#ifdef GPIO_4G2_POWER //enable 4G modem 2 power 0:enable 1:disable
+	set_gpio_value(GPIO_4G2_POWER,0); 
+	//printf("Function:%s Line:%d GPIO_4G2_POWER=%d\n",__func__, __LINE__, GPIO_4G2_POWER);
+#endif
+//#ifdef GPIO_WATCHDOG1 //pull up watchdog gpio
+//	set_gpio_value(GPIO_WATCHDOG1,1); 
+	//printf("Function:%s Line:%d GPIO_WATCHDOG1=%d\n",__func__, __LINE__, GPIO_WATCHDOG1);
+//#endif
+
+#ifdef GPIO_WATCHDOG2
+	gpio_watchdog_toggle(20);  //stop watchdog
 #endif
 
 	int counter = 0;
@@ -387,16 +515,6 @@ void main_loop (void)
 #endif
 	trab_vfd (bmp);
 #endif	/* CONFIG_VFD && VFD_TEST_LOGO */
-
-#ifdef CONFIG_BOOTCOUNT_LIMIT
-	bootcount = bootcount_load();
-	bootcount++;
-	bootcount_store (bootcount);
-	sprintf (bcs_set, "%lu", bootcount);
-	setenv ("bootcount", bcs_set);
-	bcs = getenv ("bootlimit");
-	bootlimit = bcs ? simple_strtoul (bcs, NULL, 10) : 0;
-#endif /* CONFIG_BOOTCOUNT_LIMIT */
 
 #ifdef CONFIG_MODEM_SUPPORT
 	debug ("DEBUG: main_loop:   do_mdm_init=%d\n", do_mdm_init);
@@ -451,77 +569,66 @@ void main_loop (void)
 //	debug ("### main_loop entered: bootdelay=%d\n\n", bootdelay);
 
 	if(reset_button_status()){
-		// wait 0,5s
-		udelay(500000);
+                // wait 0,5s
+                udelay(500000);
 
-		printf("Press reset button for at least:\n- %d sec. to run web failsafe mode\n",
+                printf("Press reset button for at least:\n- %d sec. to run web failsafe mode\n",
                        CONFIG_DELAY_TO_AUTORUN_HTTPD);
-		printf("Reset button is pressed for: %2d ", counter);
+                printf("Reset button is pressed for: %2d ", counter);
 
-		while(reset_button_status() && counter < CONFIG_DELAY_TO_AUTORUN_HTTPD){
-			// LED ON and wait 0,15s
-			red_led_on();
-			udelay(150000);
+                while(reset_button_status() && counter < CONFIG_DELAY_TO_AUTORUN_HTTPD){
+                        // LED ON and wait 0,15s
+                        red_led_on();
+                        udelay(150000);
 
-			// LED OFF and wait 0,85s
-			red_led_off();
-			udelay(850000);
+                        // LED OFF and wait 0,85s
+                        red_led_off();
+                        udelay(850000);
 
-			counter++;
+                        counter++;
 
-			// how long the button is pressed?
-			printf("\b\b\b%2d ", counter);
+                        // how long the button is pressed?
+                        printf("\b\b\b%2d ", counter);
+						mifi_v3_send_msg("{ \"button\": \"%d\" }",counter);
 
-			//turn on Red LED to show httpd started
-			if(counter==CONFIG_DELAY_TO_AUTORUN_HTTPD){
-				green_led_on();
-			}
+                        //turn on Red LED to show httpd started
+                        if(counter==CONFIG_DELAY_TO_AUTORUN_HTTPD){
+                                green_led_on();
+                        }
 
-			if(!reset_button_status()){
-				break;
-			}
-		}
+                        if(!reset_button_status()){
+                                break;
+                        }
+                }
 
-		//all_led_off();
+                //all_led_off();
 
-		if(counter > 0){
+                if(counter > 0){
 
-			// run web failsafe mode
-			if(counter >= CONFIG_DELAY_TO_AUTORUN_HTTPD){
-				printf("\n\nButton was pressed for %d sec...\nHTTP server is starting for firmware update...\n\n", counter);
-				NetLoopHttpd();
-				bootdelay = -1;
-			} else {
-				printf("\n\n## Error: button wasn't pressed long enough!\nContinuing normal boot...\n\n");
-			}
+                        // run web failsafe mode
+                        if(counter >= CONFIG_DELAY_TO_AUTORUN_HTTPD){
+                                printf("\n\nButton was pressed for %d sec...\nHTTP server is starting for firmware update...\n\n", counter); 
+                                rst_key_5s = 1;
+                               // run_command("dhcpd start", 0);
+                                mifi_v3_send_msg("{ \"system\": \"goweb\"  }");
+                                rst_key_5s = 0;
+						    	NetLoopHttpd();
+                                bootdelay = -1;
+                        } else {
+                                printf("\n\n## Error: button wasn't pressed long enough!\nContinuing normal boot...\n\n");
+                        }
 
-		} else {
-			printf("\n\n## Error: button wasn't pressed long enough!\nContinuing normal boot...\n\n");
-		}
+                } else {
+                        printf("\n\n## Error: button wasn't pressed long enough!\nContinuing normal boot...\n\n");
+                }
 
-	}
+        }
 
 # ifdef CONFIG_BOOT_RETRY_TIME
 	init_cmd_timeout ();
 # endif	/* CONFIG_BOOT_RETRY_TIME */
 
-#ifdef CONFIG_BOOTCOUNT_LIMIT
-        s = getenv("bootnlf");
-	nand_boot_failed = 0;
-        if (simple_strtol(s, NULL, 10) == 1) {
-                printf("Warning: Flash nand firmware.\n");
-                setenv("bootnlf", "0");
-                saveenv();
-                s = "if nand bad; then run nlf; fi && boot";
-        } else if (bootlimit && (bootcount > bootlimit)) {
-		nand_boot_failed = 1;
-		printf ("Warning: Bootlimit (%u) exceeded. Using altbootcmd.\n",
-		        (unsigned)bootlimit);
-		s = getenv ("altbootcmd");
-	}
-	else
-#endif /* CONFIG_BOOTCOUNT_LIMIT */
-		s = getenv ("bootcmd");
+	s = getenv ("bootcmd");
        if (!s) {
 #ifdef CONFIG_ROOTFS_FLASH
            /* XXX if rootfs is in flash, expect uImage to be in flash */
@@ -533,44 +640,84 @@ void main_loop (void)
 #else
            setenv ("bootcmd", "tftpboot 0x8022c090 uImage; bootm 0x8022c090");
 #endif
-           s = getenv ("bootcmd");
        }
 
 #ifdef CONFIG_DUALIMAGE_SUPPORT
 		findbdr(0);
 #endif
+		s = getenv ("bootcmd");
 
 //	debug ("### main_loop: bootcmd=\"%s\"\n", s ? s : "<UNDEFINED>");
-	run_command("protect off all",0);
 	if (bootdelay >= 0 && s && !abortboot (bootdelay)) {
+		gl_probe_upgrade = 0;//停止升级检测
+#ifdef CONFIG_GL_RSA
+	rsa_verify_into_firmware();
+#endif
+
+#ifdef CONFIG_BOOTCOUNT_LIMIT
+	bootcount = bootcount_load();
+	bootcount++;
+	bootcount_store (bootcount);
+	sprintf (bcs_set, "%lu", bootcount);
+	setenv ("bootcount", bcs_set);
+	bcs = getenv ("bootlimit");
+	bootlimit = bcs ? simple_strtoul (bcs, NULL, 10) : 0;
+
+	if (bootlimit && (bootcount > bootlimit)) {
+		printf ("Warning: Bootlimit (%u) exceeded. bootm nor flash.\n",
+		        (unsigned)bootlimit);
+		nand_boot_failed = 1;
+		char s_cmd[30]={0};
+		sprintf(s_cmd,"bootm 0x%x",GL_BOOT_ADDR);
+		setenv("bootcmd",s_cmd);
+	}
+#endif // CONFIG_BOOTCOUNT_LIMIT
+
 # ifdef CONFIG_AUTOBOOT_KEYED
 		int prev = disable_ctrlc(1);	/* disable Control C checking */
 # endif
 		int status=calibration_status();
-		/*是不是需要校准
-		 * -1: no art found, stop
-		 * 0 : not calibrated, booting calibration firmware
-		 * 1 : calibrated, and but need to write config
-		 * 2 : calibrated, and config ready
-		*/
+                /*是不是需要校准
+                 * -1: no art found, stop
+                 * 0 : not calibrated, booting calibration firmware
+                 * 1 : calibrated, and but need to write config
+                 * 2 : calibrated, and config ready
+                */
+		char boot_cmd[30]={0};
 		switch(status){
-			case 6:goto mainloop;break;
-			case 4:
-			case 5:
-			case 3:
-                               printf("Booting image at: 0x9F050000\n");
-                               run_command("bootm 0x9f050000",0);
-				goto mainloop;break;
-			//case 3:run_command("run lc",0);break;
-			case 2:
-			case 0:printf("Booting image at: 0x9F050000\n");break;
-			case 1:printf("Booting image at: 0x81000000\n");break;
-			default:break;
+                        case 6:goto mainloop;break;
+                        case 4:
+                        case 5:
+                        case 3:
+			        bootcount_store(4);//wait for the stand frimware ready
+                               printf("Booting image at: 0x%X\n",GL_BOOT_ADDR);
+			       sprintf(boot_cmd,"bootm 0x%x",GL_BOOT_ADDR);
+                               run_command(boot_cmd,0);
+                                goto mainloop;break;
+                        //case 3:run_command("run lc",0);break;
+                        case 2:
+                        case 0:printf("Booting image at: 0x%X\n",GL_BOOT_ADDR);break;
+                        case 1:printf("Booting image at: 0x81000000\n");break;
+                        default:break;
+                }
+        check_tftp_file();
+        
+#ifdef GPIO_WATCHDOG2
+		gpio_watchdog_toggle(5); //start x1200 watchdog
+#endif
+
+        select_boot_dev();
+        if(nand_boot_failed){
+			sprintf(boot_cmd,"bootm 0x%x",GL_BOOT_ADDR);
+            run_command(boot_cmd,0);
 		}
-	check_tftp_file();
-	select_boot_dev();
-	if(nand_boot_failed)
-	run_command("bootm 0x9f050000",0);
+# ifdef CONFIG_AR300M
+		else {
+			sprintf(boot_cmd,"nboot 0x81000000 0");
+			run_command(boot_cmd,0);
+		}
+# endif
+
 # ifndef CFG_HUSH_PARSER
 		run_command (s, 0);
 # else
@@ -581,7 +728,16 @@ void main_loop (void)
 # ifdef CONFIG_AUTOBOOT_KEYED
 		disable_ctrlc(prev);	/* restore Control C checking */
 # endif
-	}
+
+    //	 printf("\n## Error: failed to boot linux !\nHTTPD server is starting...##\n\n");
+    //   run_command("dhcpd start", 0);
+# ifdef CONFIG_XE300
+    	exception_led_indicator();
+# endif
+        run_command("dhcpd start", 0);
+	    NetLoopHttpd();
+        bootdelay = -1;
+    }
 
 # ifdef CONFIG_MENUKEY
 	if (menukey == CONFIG_MENUKEY) {
@@ -609,6 +765,10 @@ void main_loop (void)
 	 * Main Loop for Monitor Command Processing
 	 */
 mainloop:
+#ifdef CONFIG_GL_RSA
+	rsa_verify_into_uboot_console();
+#endif
+
 #ifdef CFG_HUSH_PARSER
 	parse_file_outer();
 	/* This point is never reached */
@@ -683,390 +843,6 @@ void reset_cmd_timeout(void)
 }
 #endif
 
-#ifdef CONFIG_CMDLINE_EDITING
-
-/*
- * cmdline-editing related codes from vivi.
- * Author: Janghoon Lyu <nandy@mizi.com>
- */
-
-#define putnstr(str,n)	do {			\
-		printf ("%.*s", n, str);	\
-	} while (0)
-
-#define CTL_CH(c)		((c) - 'a' + 1)
-
-#define MAX_CMDBUF_SIZE		256
-
-#define CTL_BACKSPACE		('\b')
-#define DEL			((char)255)
-#define DEL7			((char)127)
-#define CREAD_HIST_CHAR		('!')
-
-#define getcmd_putch(ch)	putc(ch)
-#define getcmd_getch()		getc()
-#define getcmd_cbeep()		getcmd_putch('\a')
-
-#define HIST_MAX		20
-#define HIST_SIZE		MAX_CMDBUF_SIZE
-
-static int hist_max = 0;
-static int hist_add_idx = 0;
-static int hist_cur = -1;
-unsigned hist_num = 0;
-
-char* hist_list[HIST_MAX];
-char hist_lines[HIST_MAX][HIST_SIZE];
-
-#define add_idx_minus_one() ((hist_add_idx == 0) ? hist_max : hist_add_idx-1)
-
-static void hist_init(void)
-{
-	int i;
-
-	hist_max = 0;
-	hist_add_idx = 0;
-	hist_cur = -1;
-	hist_num = 0;
-
-	for (i = 0; i < HIST_MAX; i++) {
-		hist_list[i] = hist_lines[i];
-		hist_list[i][0] = '\0';
-	}
-}
-
-static void cread_add_to_hist(char *line)
-{
-	strcpy(hist_list[hist_add_idx], line);
-
-	if (++hist_add_idx >= HIST_MAX)
-		hist_add_idx = 0;
-
-	if (hist_add_idx > hist_max)
-		hist_max = hist_add_idx;
-
-	hist_num++;
-}
-
-static char* hist_prev(void)
-{
-	char *ret;
-	int old_cur;
-
-	if (hist_cur < 0)
-		return NULL;
-
-	old_cur = hist_cur;
-	if (--hist_cur < 0)
-		hist_cur = hist_max;
-
-	if (hist_cur == hist_add_idx) {
-		hist_cur = old_cur;
-		ret = NULL;
-	} else
-		ret = hist_list[hist_cur];
-
-	return (ret);
-}
-
-static char* hist_next(void)
-{
-	char *ret;
-
-	if (hist_cur < 0)
-		return NULL;
-
-	if (hist_cur == hist_add_idx)
-		return NULL;
-
-	if (++hist_cur > hist_max)
-		hist_cur = 0;
-
-	if (hist_cur == hist_add_idx) {
-		ret = "";
-	} else
-		ret = hist_list[hist_cur];
-
-	return (ret);
-}
-
-#ifndef CONFIG_CMDLINE_EDITING
-static void cread_print_hist_list(void)
-{
-	int i;
-	unsigned long n;
-
-	n = hist_num - hist_max;
-
-	i = hist_add_idx + 1;
-	while (1) {
-		if (i > hist_max)
-			i = 0;
-		if (i == hist_add_idx)
-			break;
-		printf("%s\n", hist_list[i]);
-		n++;
-		i++;
-	}
-}
-#endif /* CONFIG_CMDLINE_EDITING */
-
-#define BEGINNING_OF_LINE() {			\
-	while (num) {				\
-		getcmd_putch(CTL_BACKSPACE);	\
-		num--;				\
-	}					\
-}
-
-#define ERASE_TO_EOL() {				\
-	if (num < eol_num) {				\
-		int tmp;				\
-		for (tmp = num; tmp < eol_num; tmp++)	\
-			getcmd_putch(' ');		\
-		while (tmp-- > num)			\
-			getcmd_putch(CTL_BACKSPACE);	\
-		eol_num = num;				\
-	}						\
-}
-
-#define REFRESH_TO_EOL() {			\
-	if (num < eol_num) {			\
-		wlen = eol_num - num;		\
-		putnstr(buf + num, wlen);	\
-		num = eol_num;			\
-	}					\
-}
-
-static void cread_add_char(char ichar, int insert, unsigned long *num,
-	       unsigned long *eol_num, char *buf, unsigned long len)
-{
-	unsigned long wlen;
-
-	/* room ??? */
-	if (insert || *num == *eol_num) {
-		if (*eol_num > len - 1) {
-			getcmd_cbeep();
-			return;
-		}
-		(*eol_num)++;
-	}
-
-	if (insert) {
-		wlen = *eol_num - *num;
-		if (wlen > 1) {
-			memmove(&buf[*num+1], &buf[*num], wlen-1);
-		}
-
-		buf[*num] = ichar;
-		putnstr(buf + *num, wlen);
-		(*num)++;
-		while (--wlen) {
-			getcmd_putch(CTL_BACKSPACE);
-		}
-	} else {
-		/* echo the character */
-		wlen = 1;
-		buf[*num] = ichar;
-		putnstr(buf + *num, wlen);
-		(*num)++;
-	}
-}
-
-static void cread_add_str(char *str, int strsize, int insert, unsigned long *num,
-	      unsigned long *eol_num, char *buf, unsigned long len)
-{
-	while (strsize--) {
-		cread_add_char(*str, insert, num, eol_num, buf, len);
-		str++;
-	}
-}
-
-static int cread_line(char *buf, unsigned int *len)
-{
-	unsigned long num = 0;
-	unsigned long eol_num = 0;
-	unsigned long rlen;
-	unsigned long wlen;
-	char ichar;
-	int insert = 1;
-	int esc_len = 0;
-	int rc = 0;
-	char esc_save[8];
-	while (1) {
-		rlen = 1;
-		ichar = getcmd_getch();
-
-		if ((ichar == '\n') || (ichar == '\r')) {
-			putc('\n');
-			break;
-		}
-
-		/*
-		 * handle standard linux xterm esc sequences for arrow key, etc.
-		 */
-		if (esc_len != 0) {
-			if (esc_len == 1) {
-				if (ichar == '[') {
-					esc_save[esc_len] = ichar;
-					esc_len = 2;
-				} else {
-					cread_add_str(esc_save, esc_len, insert,
-						      &num, &eol_num, buf, *len);
-					esc_len = 0;
-				}
-				continue;
-			}
-
-			switch (ichar) {
-
-			case 'D':	/* <- key */
-				ichar = CTL_CH('b');
-				esc_len = 0;
-				break;
-			case 'C':	/* -> key */
-				ichar = CTL_CH('f');
-				esc_len = 0;
-				break;	/* pass off to ^F handler */
-			case 'H':	/* Home key */
-				ichar = CTL_CH('a');
-				esc_len = 0;
-				break;	/* pass off to ^A handler */
-			case 'A':	/* up arrow */
-				ichar = CTL_CH('p');
-				esc_len = 0;
-				break;	/* pass off to ^P handler */
-			case 'B':	/* down arrow */
-				ichar = CTL_CH('n');
-				esc_len = 0;
-				break;	/* pass off to ^N handler */
-			default:
-				esc_save[esc_len++] = ichar;
-				cread_add_str(esc_save, esc_len, insert,
-					      &num, &eol_num, buf, *len);
-				esc_len = 0;
-				continue;
-			}
-		}
-
-		switch (ichar) {
-		case 0x1b:
-			if (esc_len == 0) {
-				esc_save[esc_len] = ichar;
-				esc_len = 1;
-			} else {
-				puts("impossible condition #876\n");
-				esc_len = 0;
-			}
-			break;
-
-		case CTL_CH('a'):
-			BEGINNING_OF_LINE();
-			break;
-		case CTL_CH('c'):	/* ^C - break */
-			*buf = '\0';	/* discard input */
-			return (-1);
-		case CTL_CH('f'):
-			if (num < eol_num) {
-				getcmd_putch(buf[num]);
-				num++;
-			}
-			break;
-		case CTL_CH('b'):
-			if (num) {
-				getcmd_putch(CTL_BACKSPACE);
-				num--;
-			}
-			break;
-		case CTL_CH('d'):
-			if (num < eol_num) {
-				wlen = eol_num - num - 1;
-				if (wlen) {
-					memmove(&buf[num], &buf[num+1], wlen);
-					putnstr(buf + num, wlen);
-				}
-
-				getcmd_putch(' ');
-				do {
-					getcmd_putch(CTL_BACKSPACE);
-				} while (wlen--);
-				eol_num--;
-			}
-			break;
-		case CTL_CH('k'):
-			ERASE_TO_EOL();
-			break;
-		case CTL_CH('e'):
-			REFRESH_TO_EOL();
-			break;
-		case CTL_CH('o'):
-			insert = !insert;
-			break;
-		case CTL_CH('x'):
-			BEGINNING_OF_LINE();
-			ERASE_TO_EOL();
-			break;
-		case DEL:
-		case DEL7:
-		case 8:
-			if (num) {
-				wlen = eol_num - num;
-				num--;
-				memmove(&buf[num], &buf[num+1], wlen);
-				getcmd_putch(CTL_BACKSPACE);
-				putnstr(buf + num, wlen);
-				getcmd_putch(' ');
-				do {
-					getcmd_putch(CTL_BACKSPACE);
-				} while (wlen--);
-				eol_num--;
-			}
-			break;
-		case CTL_CH('p'):
-		case CTL_CH('n'):
-		{
-			char * hline;
-
-			esc_len = 0;
-
-			if (ichar == CTL_CH('p'))
-				hline = hist_prev();
-			else
-				hline = hist_next();
-
-			if (!hline) {
-				getcmd_cbeep();
-				continue;
-			}
-
-			/* nuke the current line */
-			/* first, go home */
-			BEGINNING_OF_LINE();
-
-			/* erase to end of line */
-			ERASE_TO_EOL();
-
-			/* copy new line into place and display */
-			strcpy(buf, hline);
-			eol_num = strlen(buf);
-			REFRESH_TO_EOL();
-			continue;
-		}
-		default:
-			cread_add_char(ichar, insert, &num, &eol_num, buf, *len);
-			break;
-		}
-	}
-	*len = eol_num;
-	buf[eol_num] = '\0';	/* lose the newline */
-
-	if (buf[0] && buf[0] != CREAD_HIST_CHAR)
-		cread_add_to_hist(buf);
-	hist_cur = hist_add_idx;
-
-	return (rc);
-}
-
-#endif /* CONFIG_CMDLINE_EDITING */
 /****************************************************************************/
 
 /*
@@ -1079,22 +855,6 @@ static int cread_line(char *buf, unsigned int *len)
  */
 int readline (const char *const prompt)
 {
-#ifdef CONFIG_CMDLINE_EDITING
-	char *p = console_buffer;
-	unsigned int len=MAX_CMDBUF_SIZE;
-	int rc;
-	static int initted = 0;
-
-	if (!initted) {
-		hist_init();
-		initted = 1;
-	}
-
-	puts (prompt);
-
-	rc = cread_line(p, &len);
-	return rc < 0 ? rc : len;
-#else
 	char   *p = console_buffer;
 	int	n = 0;				/* buffer index		*/
 	int	plen = 0;			/* prompt length	*/
@@ -1190,11 +950,10 @@ int readline (const char *const prompt)
 			}
 		}
 	}
-#endif /* CONFIG_CMDLINE_EDITING */
 }
 
 /****************************************************************************/
-#ifndef CONFIG_CMDLINE_EDITING
+
 static char * delete_char (char *buffer, char *p, int *colp, int *np, int plen)
 {
 	char *s;
@@ -1224,7 +983,7 @@ static char * delete_char (char *buffer, char *p, int *colp, int *np, int plen)
 	(*np)--;
 	return (p);
 }
-#endif /* CONFIG_CMDLINE_EDITING */
+
 /****************************************************************************/
 
 int parse_line (char *line, char *argv[])
@@ -1456,7 +1215,6 @@ int run_command (const char *cmd, int flag)
 			    (*(sep-1) != '\\'))	/* and NOT escaped	*/
 				break;
 		}
-
 		/*
 		 * Limit the token to data between separators
 		 */

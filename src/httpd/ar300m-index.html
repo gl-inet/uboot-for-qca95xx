@@ -1,0 +1,41 @@
+<!DOCTYPE HTML>
+<html>
+	<head>
+		<meta charset="utf-8">
+		<title>Firmware update</title>
+		<link rel="stylesheet" href="style.css">
+	</head>
+
+	<body>
+		<div id="m">
+			<h1>FIRMWARE UPDATE</h1>
+			<p>You are going to update <strong>firmware</strong> on the device.<br>Please, choose file from your local hard drive and click <strong>Update firmware</strong> button.</p>
+
+			<form method="post" enctype="multipart/form-data">
+				<input type="file" name="gl_firmware">
+				<input type="submit" value="Update gl-inet firmware"><br>
+			</form>
+
+
+			<p>Enable the DIP switch of the router, it allows you to select the firmware to boot from <strong>Nor flash</strong> or <strong>Nand flash</strong>.<br>
+				1.Left side (near the USB ) --> Nand flash &emsp; 2.Right side --> Nor flash.&emsp;
+				<a href="https://docs.gl-inet.com/en/3/hardware/ar300m/#method-1-set-boot-count" target="_blank">Reference docs >></a></p>
+			<form method="post" enctype="multipart/form-data">
+				<input type="radio" name="enable_switch"  value="gl_yes">Enable switch&emsp;&emsp;
+				<input type="radio" name="enable_switch" checked="checked" value="gl_no" >Disable switch&emsp;&emsp;
+				<input type="submit" value="Submit" > 
+			</form>
+			
+			<div class="i w">
+				<strong>WARNINGS</strong>
+				<ul>
+					<li>do not power off the device during update</li>
+					<li>if everything goes well, the device will restart</li>
+					<li>you can upload whatever you want, so be sure that you choose proper firmware image for your device</li>
+				</ul>
+			</div>
+		</div>
+		<div id="f">You can find more information about this project on <a href="https://github.com/pepe2k/u-boot_mod" target="_blank">GitHub</a></div>
+        <div id="f">uboot2.0 version:19.11.12</div>
+	</body>
+</html>

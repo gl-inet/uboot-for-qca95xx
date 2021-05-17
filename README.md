@@ -1,23 +1,32 @@
-# U-boot for AR300M  
+This repo is uboot source code which modified by GL.iNet team.
+The source code in the repository is compiled under the environment of OpenWrt-18.06.5
 
-This repo is uboot source code which modified by GL.iNet team.  
+### Prerequisites
+It depends on OpenWRT toolchain. We assume that you have compiled firmware from buildroot. Downloading this repo to your OpenWRT buildroot source tree.
 
-# Prerequisites  
+```
+$ cd openwrt-buildroot/package  
+$ git clone https://github.com/gl-inet/uboot-for-qca95xx.git
+$ cd ../
+```
+### Compile
+**Sealect AR71XX NAND target**
 
-It depends on OpenWRT toolchain. We assume that you have compiled firmware from buildroot. Downloading this repo to your OpenWRT buildroot source tree.  
+```
+Target System (Atheros AR7xxx/AR9xxx)  ---> 
+Subtarget (Generic devices with NAND flash)  --->
+Target Profile (GL-AR750S with nand flash)  --->
+```
+**Select the UBoot type you want to compile** (Note that if you need to compile uboot for the E750, please select mifi-v3)
 
-```bash  
-$ cd your/buildroot/path/package  
-$ git clone https://github.com/gl-inet/gl-uboot-source-for--ar300m uboot-9531
-$ cd -
-```  
+```
+Boot Loaders  ---> 
+	<M> GL-uboot-ar300m........................................ U-boot for ar300m
+	< > GL-uboot-ar750s........................................ U-boot for ar750s
+	...
+```
+```
+$ make ./package/gl-95xx-uboot/compile
+```
+After the compilation is complete, look under openWrt-buildroot/bin/targets/ar71xx/generic/ for the output binary.
 
-# Compiling U-boot  
-
-As you know, u-boot is a single package on buildroot, now we can compile it easily. Note that you need to select *Subtarget (Generic devices with NAND flash) --->* and *Target Profile (GL-AR300M NAND) --->* via `make menuconfig` at first.
-
-```  
-make package/uboot-9531/compile V=s
-```  
-
-The final binary file is located in **bin/ar71xx/openwrt-ar71xx-cus531-nand-qca-legacy-uboot.bin**.  

@@ -119,7 +119,9 @@ static int init_func_ram (void)
 static int display_banner(void)
 {
 
-	printf ("\n\n%s\n\n", version_string);
+	//printf ("\n\n%s\n\n", version_string);
+	//printf ("\n\n%s (%s)\n\n",U_BOOT_VERSION,__TIMESTAMP__);
+	printf ("\n\n%s (%s)\n\n",U_BOOT_VERSION,"Fri May 17 09:44:06 2019");
 
 	return (0);
 }
@@ -321,6 +323,9 @@ void board_init_f(ulong bootflag)
 
 void board_init_r (gd_t *id, ulong dest_addr)
 {
+#ifndef CONFIG_XE300 //XE300 not change status led
+	status_led_on();//GL -- led on
+#endif
 	cmd_tbl_t *cmdtp;
 	ulong size;
 	extern void malloc_bin_reloc (void);

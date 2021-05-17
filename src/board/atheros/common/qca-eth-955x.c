@@ -41,7 +41,6 @@
 
 int ath_gmac_miiphy_read(char *devname, uint32_t phaddr, uint8_t reg, uint16_t *data);
 int ath_gmac_miiphy_write(char *devname, uint32_t phaddr, uint8_t reg, uint16_t data);
-extern void ath_sys_frequency(uint32_t *, uint32_t *, uint32_t *);
 
 #ifndef CFG_ATH_GMAC_NMACS
 #define CFG_ATH_GMAC_NMACS	1
@@ -796,7 +795,7 @@ int ath_gmac_enet_initialize(bd_t * bis)
 		memset(ath_gmac_macs[i], 0, sizeof(ath_gmac_macs[i]));
 		memset(dev[i], 0, sizeof(dev[i]));
 
-		sprintf(dev[i]->name, "eth%d", i);
+		snprintf(dev[i]->name, sizeof(dev[i]->name), "eth%d", i);
 		ath_gmac_get_ethaddr(dev[i]);
 
 		ath_gmac_macs[i]->mac_unit = i;

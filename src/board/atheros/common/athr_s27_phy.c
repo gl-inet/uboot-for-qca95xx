@@ -62,7 +62,6 @@ typedef enum {
 #define ATHR_PHY4_ADDR   0x4
 
 #define MODULE_NAME "ATHRS27"
-
 /*
  * Track per-PHY port information.
  */
@@ -249,7 +248,7 @@ int athrs27_reg_init_lan(void)
 
 
     /* reset switch */
-    /* printf(MODULE_NAME ": resetting s27\n"); */
+    printf(MODULE_NAME ": resetting s27\n");
     athrs27_reg_write(0x0, athrs27_reg_read(0x0)|0x80000000);
 
     while(i--) {
@@ -257,7 +256,7 @@ int athrs27_reg_init_lan(void)
         if(!(athrs27_reg_read(0x0)&0x80000000))
             break;
     }
-    /* printf(MODULE_NAME ": s27 reset done\n"); */
+    printf(MODULE_NAME ": s27 reset done\n");
     athrs27_reg_write(PORT_STATUS_REGISTER0,0x4e);
 
     athrs27_reg_rmw(OPERATIONAL_MODE_REG0,(1<<6));  /* Set GMII mode */
@@ -387,7 +386,7 @@ athrs27_phy_setup(int ethUnit)
     BOOL      foundPhy = FALSE;
     uint32_t  phyAddr = 0;
 //#if S27_PHY_DEBUG
-    /* uint32_t  rd_val = 0; */
+    uint32_t  rd_val = 0;
 //#endif
     uint32_t  ar7240_revid;
 
@@ -429,10 +428,10 @@ athrs27_phy_setup(int ethUnit)
                          | ATHR_CTRL_SOFTWARE_RESET);
            }
        }
-       /* rd_val = s27_rd_phy(phyAddr,ATHR_PHY_CONTROL); */
-       /* printf("%s ATHR_PHY_CONTROL %d :%x\n",__func__,phyAddr,rd_val); */
-       /* rd_val = s27_rd_phy(phyAddr,ATHR_PHY_SPEC_STATUS); */
-       /* printf("%s ATHR_PHY_SPEC_STAUS %d :%x\n",__func__,phyAddr,rd_val); */
+       rd_val = s27_rd_phy(phyAddr,ATHR_PHY_CONTROL);
+       //printf("%s ATHR_PHY_CONTROL %d :%x\n",__func__,phyAddr,rd_val);
+       rd_val = s27_rd_phy(phyAddr,ATHR_PHY_SPEC_STATUS);
+       //printf("%s ATHR_PHY_SPEC_STAUS %d :%x\n",__func__,phyAddr,rd_val);
     }
     if (!foundPhy) {
         return FALSE; /* No PHY's configured for this ethUnit */
@@ -442,10 +441,10 @@ athrs27_phy_setup(int ethUnit)
      * After the phy is reset, it takes a little while before
      * it can respond properly.
      */
-    /* if (ethUnit == ENET_UNIT_LAN) */
-    /*     sysMsDelay(1000); */
-    /* else */
-    /*     sysMsDelay(3000); */
+    if (ethUnit == ENET_UNIT_LAN)
+        sysMsDelay(100);
+    else
+        sysMsDelay(300);
 
     /*
      * Wait up to 3 seconds for ALL associated PHYs to finish
@@ -593,7 +592,7 @@ athrs27_phy_speed(int ethUnit,int phyUnit)
     uint32_t  phyBase;
     uint32_t  phyAddr;
     int       ii = 200;
-    int       phySpeed;
+    int       phySpeed = _UNKNOWN_SPEED;
     for (phyUnit=0; phyUnit < ATHR_PHY_MAX; phyUnit++) {
         if (!ATHR_IS_ETHUNIT(phyUnit, ethUnit)) {
             continue;

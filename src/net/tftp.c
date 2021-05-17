@@ -15,7 +15,7 @@
 #if (CONFIG_COMMANDS & CFG_CMD_NET)
 
 #define WELL_KNOWN_PORT	69		/* Well known TFTP port #		*/
-#define TIMEOUT		1		/* Seconds to timeout for a lost pkt	*/
+#define TIMEOUT		2		/* Seconds to timeout for a lost pkt	*/
 #ifndef	CONFIG_NET_RETRY_COUNT
 # define TIMEOUT_COUNT	0		/* # of timeouts before giving up  */
 #else
@@ -43,7 +43,6 @@ static ulong	TftpLastBlock;		/* last packet sequence number received */
 static ulong	TftpBlockWrap;		/* count of sequence number wraparounds */
 static ulong	TftpBlockWrapOffset;	/* memory offset due to wrapping	*/
 static int	TftpState;
-char Tftp_stop;
 extern char tftp_file;
 #define STATE_RRQ	1
 #define STATE_DATA	2
@@ -168,16 +167,15 @@ TftpSend (void)
 		len = pkt - xp;
 		break;
 	}
-
 	NetSendUDPPacket(NetServerEther, NetServerIP, TftpServerPort, TftpOurPort, len);
 }
+
 
 static void
 TftpHandler (uchar * pkt, unsigned dest, unsigned src, unsigned len)
 {
 	ushort proto;
 	ushort *s;
-
 	if (dest != TftpOurPort) {
 		return;
 	}
@@ -230,8 +228,12 @@ TftpHandler (uchar * pkt, unsigned dest, unsigned src, unsigned len)
 			if (((TftpBlock - 1) % 10) == 0) {
 				putc ('#');
 			} else if ((TftpBlock % (10 * HASHES_PER_LINE)) == 0) {
-				green_led_toggle();
 				puts ("\n\t ");
+			}
+			/*GL--the middle of the LED flashing When using TFTP download files*/
+			if (((TftpBlock - 1) % 500) == 0)
+			{
+				green_led_toggle();//GL -- led flashing
 			}
 		}
 
@@ -283,36 +285,35 @@ TftpHandler (uchar * pkt, unsigned dest, unsigned src, unsigned len)
 			 *	run it.
 			 */
 			puts ("\ndone\n");
-			green_led_off();
+			green_led_off(); //GL--led off
 			NetState = NETLOOP_SUCCESS;
 		}
 		break;
 
 	case TFTP_ERROR:
 		if(0==strcmp("File not found",pkt + 2)){
-			tftp_file=0;
-			NetState = NETLOOP_FAIL;
-			break;
-			}
-		else{	
+                        tftp_file=0;
+                        NetState = NETLOOP_FAIL;
+                        break;
+                        }
+                else{
 		printf ("\nTFTP error: '%s' (%d)\n",
 					pkt + 2, ntohs(*(ushort *)pkt));
 		puts ("Starting again\n\n");
+		green_led_off(); //GL--led off
 		NetStartAgain ();
 		break;
 		}
 	}
 }
 
-
 static void
 TftpTimeout (void)
 {
 	if (++TftpTimeoutCount > TIMEOUT_COUNT) {
-//		puts ("\nRetry count exceeded; starting again\n");
-//		NetStartAgain ();
+		//puts ("\nRetry count exceeded; starting again\n");
+		//NetStartAgain ();
 		tftp_file = 0;
-		Tftp_stop = 1;
 	} else {
 		puts ("T ");
 		NetSetTimeout (TIMEOUT * CFG_HZ, TftpTimeout);
@@ -327,7 +328,7 @@ TftpStart (void)
 #ifdef CONFIG_TFTP_PORT
 	char *ep;             /* Environment pointer */
 #endif
-	Tftp_stop = 0;
+
 	if (BootFile[0] == '\0') {
 		sprintf(default_filename, "%02lX%02lX%02lX%02lX.img",
 			NetOurIP & 0xFF,
@@ -375,7 +376,6 @@ TftpStart (void)
 
 	NetSetTimeout (TIMEOUT * CFG_HZ, TftpTimeout);
 	NetSetHandler (TftpHandler);
-
 	TftpServerPort = WELL_KNOWN_PORT;
 	TftpTimeoutCount = 0;
 	TftpState = STATE_RRQ;

@@ -18,6 +18,110 @@
 #ifndef __BOARD_956X_H
 #define __BOARD_956X_H
 
+/* ethernet debug */
+/* #define ET_DEBUG */
+
+#define CFG_CONSOLE_INFO_QUIET
+#define CONFIG_DELAY_TO_AUTORUN_HTTPD 5
+#define CONFIG_BOOTCOUNT_LIMIT
+
+/*
+ * Web Failsafe configuration
+ */
+#define CONFIG_LOADADDR         0x80800000
+#define WEBFAILSAFE_UPLOAD_RAM_ADDRESS                                  CONFIG_LOADADDR
+
+// U-Boot partition size and offset
+#define WEBFAILSAFE_UPLOAD_UBOOT_ADDRESS                                CFG_FLASH_BASE
+#define CONFIG_FOR_GL_BOARD
+
+//GL support nand command
+#if defined(CONFIG_FOR_GL_BOARD)
+	#define CFG_CMD_NAND 1
+#endif
+
+
+#if defined(CONFIG_FOR_DLINK_DIR505_A1)
+        #define WEBFAILSAFE_UPLOAD_UBOOT_SIZE_IN_BYTES          (64 * 1024)
+        #define UPDATE_SCRIPT_UBOOT_SIZE_IN_BYTES                       "0x10000"
+#elif defined(CONFIG_FOR_8DEVICES_CARAMBOLA2)
+        #define WEBFAILSAFE_UPLOAD_UBOOT_SIZE_IN_BYTES          (256 * 1024)
+        #define UPDATE_SCRIPT_UBOOT_SIZE_IN_BYTES                       "0x40000"
+#elif defined(CONFIG_FOR_DOMINO)
+        #define WEBFAILSAFE_UPLOAD_UBOOT_SIZE_IN_BYTES          (256 * 1024)
+        #define UPDATE_SCRIPT_UBOOT_SIZE_IN_BYTES                       "0x40000"
+#elif defined(CONFIG_FOR_DRAGINO_V2)
+        #define WEBFAILSAFE_UPLOAD_UBOOT_SIZE_IN_BYTES          (192 * 1024)
+        #define UPDATE_SCRIPT_UBOOT_SIZE_IN_BYTES                       "0x30000"
+#elif defined(CONFIG_FOR_GL_BOARD)
+	#define WEBFAILSAFE_UPLOAD_UBOOT_SIZE_IN_BYTES          (256 * 1024)
+        #define UPDATE_SCRIPT_UBOOT_SIZE_IN_BYTES                       "0x40000"
+#else
+        #define WEBFAILSAFE_UPLOAD_UBOOT_SIZE_IN_BYTES          (256 * 1024)
+        #define UPDATE_SCRIPT_UBOOT_SIZE_IN_BYTES                       "0x40000"
+#endif
+
+#define WEBFAILSAFE_ERASE_UBOOT_SIZE_IN_BYTES                          (320 * 1024)
+// Firmware partition offset
+#if defined(CONFIG_FOR_DLINK_DIR505_A1)
+        #define WEBFAILSAFE_UPLOAD_KERNEL_ADDRESS                       WEBFAILSAFE_UPLOAD_UBOOT_ADDRESS + 0x80000
+#elif defined(CONFIG_FOR_8DEVICES_CARAMBOLA2)
+        #define WEBFAILSAFE_UPLOAD_KERNEL_ADDRESS                       WEBFAILSAFE_UPLOAD_UBOOT_ADDRESS + 0x50000
+#elif defined(CONFIG_FOR_DOMINO)
+        #define WEBFAILSAFE_UPLOAD_KERNEL_ADDRESS                       WEBFAILSAFE_UPLOAD_UBOOT_ADDRESS + 0x50000
+#elif defined(CONFIG_FOR_DRAGINO_V2)
+        #define WEBFAILSAFE_UPLOAD_KERNEL_ADDRESS                       WEBFAILSAFE_UPLOAD_UBOOT_ADDRESS + 0x40000
+#elif defined(CONFIG_FOR_GL_BOARD)					
+	#define WEBFAILSAFE_UPLOAD_KERNEL_ADDRESS			GL_BOOT_ADDR
+	#define WEBFAILSAFE_UPLOAD_NAND_KERNEL_SIZE			0x200000
+#else
+        #define WEBFAILSAFE_UPLOAD_KERNEL_ADDRESS                       WEBFAILSAFE_UPLOAD_UBOOT_ADDRESS + 0x20000
+#endif
+
+// ART partition size and offset
+#if defined(CONFIG_FOR_DLINK_DIR505_A1)
+        #define WEBFAILSAFE_UPLOAD_ART_ADDRESS                          WEBFAILSAFE_UPLOAD_UBOOT_ADDRESS + 0x10000
+#endif
+#if defined(CONFIG_FOR_GL_BOARD)
+        #define WEBFAILSAFE_UPLOAD_ART_ADDRESS                          WEBFAILSAFE_UPLOAD_UBOOT_ADDRESS + 0x50000
+#endif
+#define WEBFAILSAFE_UPLOAD_ART_SIZE_IN_BYTES                    (64 * 1024)
+
+// max. firmware size <= (FLASH_SIZE -  WEBFAILSAFE_UPLOAD_LIMITED_AREA_IN_BYTES)
+#if defined(CONFIG_FOR_DLINK_DIR505_A1)
+        // D-Link DIR-505: 64k(U-Boot),64k(ART),64k(MAC),64k(NVRAM),256k(Language)
+        #define WEBFAILSAFE_UPLOAD_LIMITED_AREA_IN_BYTES        (512 * 1024)
+#elif defined(CONFIG_FOR_8DEVICES_CARAMBOLA2)
+        // Carambola 2: 256k(U-Boot),64k(U-Boot env),64k(ART)
+        #define WEBFAILSAFE_UPLOAD_LIMITED_AREA_IN_BYTES        (384 * 1024)
+#elif defined(CONFIG_FOR_DOMINO)
+        // DOMINO 2: 256k(U-Boot),64k(U-Boot env),64k(ART)
+        #define WEBFAILSAFE_UPLOAD_LIMITED_AREA_IN_BYTES        (384 * 1024)
+#elif defined(CONFIG_FOR_DRAGINO_V2)
+        // Dragino 2: 192k(U-Boot),64k(U-Boot env),64k(ART)
+        #define WEBFAILSAFE_UPLOAD_LIMITED_AREA_IN_BYTES        (320 * 1024)
+#elif defined(CONFIG_FOR_GS_OOLITE_V1_DEV)
+        // GS-Oolite v1: 128k(U-Boot + MAC),64k(ART)
+        #define WEBFAILSAFE_UPLOAD_LIMITED_AREA_IN_BYTES        (192 * 1024)
+#else
+        // TP-Link: 64k(U-Boot),64k(MAC/model/WPS pin block),64k(ART)
+        #define WEBFAILSAFE_UPLOAD_LIMITED_AREA_IN_BYTES        (192 * 1024)
+#endif
+
+// progress state info
+#define WEBFAILSAFE_PROGRESS_START                              0
+#define WEBFAILSAFE_PROGRESS_TIMEOUT                    1
+#define WEBFAILSAFE_PROGRESS_UPLOAD_READY               2
+#define WEBFAILSAFE_PROGRESS_UPGRADE_READY              3
+#define WEBFAILSAFE_PROGRESS_UPGRADE_FAILED             4
+
+// update type
+#define WEBFAILSAFE_UPGRADE_TYPE_FIRMWARE               0
+#define WEBFAILSAFE_UPGRADE_TYPE_UBOOT                  1
+#define WEBFAILSAFE_UPGRADE_TYPE_ART                    2
+#define WEBFAILSAFE_UPGRADE_TYPE_NOR_FIRMWARE           3
+
+
 #include <config.h>
 
 #undef MTDPARTS_DEFAULT
@@ -29,11 +133,44 @@
 #ifndef FLASH_SIZE
 #define FLASH_SIZE 8
 #endif
+
+#define _TO_STR(a) #a
+#define TO_STR(a) _TO_STR(a)
+
+#define CONFIG_SYS_VSNPRINTF
 /*-----------------------------------------------------------------------
  * FLASH and environment organization
  */
+
+/*
+ *define gl environment
+*/
+
+#define COMMAND_LF "if ping $serverip; then tftp $loadaddr $firmware_nand_name && erase $firmware_addr +$kernelsize && nand erase && cp.b $fileaddr $firmware_addr $kernelsize && nand write $rootfs_addr 0 $rootfs_size && echo OK!; else echo ERROR! Server not reachable!; fi"
+
+#define COMMAND_RLF "if ping $serverip; then tftp $loadaddr $firmware_nor_name && erase $firmware_addr +$filesize && cp.b $fileaddr $firmware_addr $filesize && echo OK!; else echo ERROR! Server not reachable!; fi" 
+
+#define VAR_FIRMWARE_ADDR GL_BOOT_ADDR
+#define VAR_FIRMWARE_NOR_NAME  "openwrt-gl-"CONFIG_BOARD_NAME".bin"
+#define VAR_FIRMWARE_NAND_NAME "openwrt-gl-"CONFIG_BOARD_NAME".img"
+
+#define COMMAND_LU "if ping $serverip; then tftp $loadaddr $uboot_name && erase $uboot_addr +$uboot_size && cp.b $fileaddr $uboot_addr $filesize && echo OK!; else echo ERROR! Server not reachable!; fi"
+
+#define COMMAND_LC "tftp 0x80100000 config.bin && cp.b "TO_STR(GL_ART_ADDR)" 0x81000000 0xffff && cp.b 0x80100000 0x81000000 0x40 && cp.b 0x80100000 0x81001002 0x06 && erase "TO_STR(GL_ART_ADDR)\
+" +0xffff && cp.b 0x81000000 "TO_STR(GL_ART_ADDR)" 0xffff"
+
+#define VAR_UBOOT_ADDR	0x9f000000
+#define VAR_UBOOT_SIZE	0x00050000
+#define VAR_UBOOT_NAME	"uboot-gl-"CONFIG_BOARD_NAME".bin"
+#define VAR_KERNEL_SIZE 0x00200000
+#define VAR_ROOTFS_ADDR 0x80a00000
+
+/*****************gl environment end************/
+
 #define CFG_MAX_FLASH_BANKS	1	/* max number of memory banks */
-#if (FLASH_SIZE == 16)
+#if (FLASH_SIZE == 32)
+#define CFG_FLASH_SIZE		0x02000000	/* Total flash size */
+#elif (FLASH_SIZE == 16)
 #define CFG_MAX_FLASH_SECT	256	/* max number of sectors on one chip */
 #define ATH_MTDPARTS_MIB0	"64k(mib0)"
 #elif (FLASH_SIZE == 8)
@@ -203,7 +340,14 @@
 		 */
 #		define MTDPARTS_DEFAULT	"mtdparts=ath-nor0:32k(u-boot1),32k(u-boot2),3008k(rootfs),896k(uImage),64k(mib0),64k(ART)"
 #	else
-#if (FLASH_SIZE == 16) /*FLASH SIZE */
+#ifdef CONFIG_FOR_GL_BOARD
+#       define ATH_F_FILE               fs_name(${bc}-jffs2)
+#       define ATH_F_LEN                0xE30000
+#       define ATH_F_ADDR               0x9f050000
+#       define ATH_K_FILE               vmlinux${bc}.lzma.uImage
+#       define ATH_K_ADDR               0x9f060000
+#       define MTDPARTS_DEFAULT         "mtdparts=ath-nor0:256k(u-boot),64k(u-boot-env),14528k(rootfs),1408k(uImage)," ATH_MTDPARTS_MIB0 ",64k(ART)"
+#elif (FLASH_SIZE == 16) /*FLASH SIZE */
 #	define ATH_F_FILE		fs_name(${bc}-jffs2)
 #	define ATH_F_LEN		0xE30000
 #	define ATH_F_ADDR		0x9f050000
@@ -268,13 +412,15 @@
 
 #ifdef CONFIG_ATH_NAND_SUPPORT
 #ifdef ATH_SPI_NAND
-#	define CONFIG_BOOTCOMMAND       "nboot 0x81000000 0 0"
+#	define CONFIG_BOOTCOMMAND       "if nand bad; then nboot 0x81000000 0 || run blf; else run blf; fi"
 #else
-#	define CONFIG_BOOTCOMMAND	"nboot 0x81000000 0 0x80000"
+#	define CONFIG_BOOTCOMMAND	"boot 0x9f050000"
 #endif 
 #else
 #	define CFG_ENV_ADDR		0x9f040000
-#if (FLASH_SIZE ==16) /*FLASH_SIZE */
+#ifdef CONFIG_FOR_GL_BOARD
+#	define CONFIG_BOOTCOMMAND       "bootm 0x9f060000"
+#elif (FLASH_SIZE ==16) /*FLASH_SIZE */
 #	define CONFIG_BOOTCOMMAND	"bootm 0x9fe80000"
 #elif (FLASH_SIZE == 8)
 #	define CONFIG_BOOTCOMMAND	"bootm 0x9f680000"
@@ -341,6 +487,7 @@
 #	endif
 #endif /* #ifndef COMPRESSED_UBOOT */
 
+
 #ifdef CONFIG_ATH_NAND_SUPPORT
 #	ifdef CONFIG_ATH_NAND_BR
 #		define CFG_ENV_IS_IN_NAND	1
@@ -371,7 +518,7 @@
 #define CONFIG_COMMANDS			(ATH_CFG_COMMANDS | ATH_EXTRA_CMD)
 
 #define CONFIG_IPADDR			192.168.1.1
-#define CONFIG_SERVERIP			192.168.1.10
+#define CONFIG_SERVERIP			192.168.1.2
 #define CONFIG_ETHADDR			0x00:0xaa:0xbb:0xcc:0xdd:0xee
 #define CFG_FAULT_ECHO_LINK_DOWN	1
 

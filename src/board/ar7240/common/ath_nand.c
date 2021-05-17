@@ -1439,7 +1439,7 @@ ath_nand_set_ns(struct mtd_info *mtd)
 		return;
 	}
 
-	sprintf(ns, "-0x%x-0x%x", mtd->erasesize, mtd->writesize);
+	snprintf(ns, sizeof(ns), "-0x%x-0x%x", mtd->erasesize, mtd->writesize);
 	setenv(ATH_NAND_SPEC, ns);
 	printf("set " ATH_NAND_SPEC " %s\n", ns);
 }

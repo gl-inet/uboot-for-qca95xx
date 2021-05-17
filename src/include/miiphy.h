@@ -80,6 +80,7 @@ int bb_miiphy_write (char *devname, unsigned char addr,
 #define _10BASET		10
 #define HALF			22
 #define FULL			44
+#define _UNKNOWN_SPEED		0
 
 /* phy register offsets */
 #define PHY_BMCR		0x00

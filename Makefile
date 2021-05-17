@@ -6,6 +6,7 @@ PKG_SOURCE_PROTO:=git
 PKG_BRANCH:=1.1
 PKG_RELEASE:=1
 
+#include $(INCLUDE_DIR)/local-development.mk
 ifeq ($(DUMP)$(PKG_VERSION),)
   PKG_VERSION:=$(shell git ls-remote $(PKG_SOURCE_URL) $(PKG_BRANCH) | cut -b -7)
 endif
@@ -27,7 +28,7 @@ ifdef BUILD_VARIANT
 UBOOT_CONFIG:=$(patsubst UBOOT_CONFIG_TARGET=%,%,\
         $(filter UBOOT_CONFIG_TARGET%,\
             $(shell cat ./configs/$(BUILD_VARIANT)-$(BOARD)$(if $(SUBTARGET),_$(SUBTARGET)).mk)))
-UBOOT_IMAGE:=$(if $(IMAGE),$(IMAGE),openwrt-$(BOARD)-$(BUILD_VARIANT)-qca-legacy-uboot.bin)
+UBOOT_IMAGE:=$(if $(IMAGE),$(IMAGE),uboot-gl-$(BUILD_VARIANT).bin)
 UBOOT_MAKE_OPTS+=$(patsubst MAKEOPTS_%,%,\
         $(filter MAKEOPTS_%,\
             $(shell cat ./configs/$(BUILD_VARIANT)-$(BOARD)$(if $(SUBTARGET),_$(SUBTARGET)).mk)))
@@ -35,7 +36,7 @@ endif
 
 
 define Build/Prepare
-	#$(call Build/Prepare/Default)
+#	$(call Build/Prepare/Default)
 	mkdir -p $(PKG_BUILD_DIR)
 	$(CP) ./src/* $(PKG_BUILD_DIR)
 endef
@@ -57,7 +58,7 @@ define Build/InstallDev
 endef
 
 define Package/qca-legacy-uboot/common
-  define Package/qca-legacy-uboot-$(1)
+  define Package/GL-uboot-$(1)
     SECTION:=boot
     CATEGORY:=Boot Loaders
     TITLE:=U-boot for $(1)
@@ -70,29 +71,57 @@ endef
 define Package/qca-legacy-uboot/nor
   $(call Package/qca-legacy-uboot/common,$(1),$(2))
 
-  define Package/qca-legacy-uboot-$(1)/install
+  define Package/GL-uboot-$(1)/install
 	$(INSTALL_DATA) $(PKG_BUILD_DIR)/u-boot.bin $(BIN_DIR)/$(UBOOT_IMAGE)
+	$(INSTALL_DATA) $(PKG_BUILD_DIR)/tools/spi_prog/prog_free.bin $(BIN_DIR)/
   endef
 
-  $$(eval $$(call BuildPackage,qca-legacy-uboot-$(1)))
+  $$(eval $$(call BuildPackage,GL-uboot-$(1)))
 endef
 
 define Package/qca-legacy-uboot/nand
   $(call Package/qca-legacy-uboot/common,$(1),+qca-romboot-$(2))
 
-  define Package/qca-legacy-uboot-$(1)/install
+  define Package/GL-uboot-$(1)/install
 	UTILPATH=$(STAGING_DIR_HOST)/bin $(STAGING_DIR_HOST)/bin/mk2stage-$(2) \
 		-1 $(STAGING_DIR)/boot/openwrt-$(BOARD)-$(2)-rombootdrv.bin \
 		-2 $(PKG_BUILD_DIR)/u-boot.bin \
 		-o $(BIN_DIR)/$(patsubst %.bin,%.2fw,$(UBOOT_IMAGE))
   endef
 
-  $$(eval $$(call BuildPackage,qca-legacy-uboot-$(1)))
+  $$(eval $$(call BuildPackage,GL-uboot-$(1)))
 endef
 
-$(eval $(call Package/qca-legacy-uboot/nor,ap143-16M))
-$(eval $(call Package/qca-legacy-uboot/nor,ap143-32M))
-$(eval $(call Package/qca-legacy-uboot/nor,cus531-16M))
-$(eval $(call Package/qca-legacy-uboot/nor,cus531-32M))
-$(eval $(call Package/qca-legacy-uboot/nor,cus531-dual))
-$(eval $(call Package/qca-legacy-uboot/nor,cus531-nand))
+
+
+
+#$(eval $(call Package/qca-legacy-uboot/nor,ap121))
+#$(eval $(call Package/qca-legacy-uboot/nor,ap135))
+#$(eval $(call Package/qca-legacy-uboot/nand,ap135-nand,qca955x))
+#$(eval $(call Package/qca-legacy-uboot/nor,ap136))
+#$(eval $(call Package/qca-legacy-uboot/nor,ap137-16M))
+#$(eval $(call Package/qca-legacy-uboot/nor,db12x))
+#$(eval $(call Package/qca-legacy-uboot/nand,cus227,ar934x))
+#$(eval $(call Package/qca-legacy-uboot/nor,db12x-16M))
+#$(eval $(call Package/qca-legacy-uboot/nor,ap143-16M))
+#$(eval $(call Package/qca-legacy-uboot/nor,ap143-32M))
+#$(eval $(call Package/qca-legacy-uboot/nor,ap147-8M))
+#$(eval $(call Package/qca-legacy-uboot/nor,ap147-16M))
+#$(eval $(call Package/qca-legacy-uboot/nor,ap151-8M))
+#$(eval $(call Package/qca-legacy-uboot/nor,ap151-16M))
+#$(eval $(call Package/qca-legacy-uboot/nor,ap151-32M))
+#$(eval $(call Package/qca-legacy-uboot/nor,ap152-8M))
+$(eval $(call Package/qca-legacy-uboot/nor,ar750s))
+#$(eval $(call Package/qca-legacy-uboot/nor,ap152-32M))
+#$(eval $(call Package/qca-legacy-uboot/nor,ap152-dual))
+#$(eval $(call Package/qca-legacy-uboot/nor,cus531-16M))
+#$(eval $(call Package/qca-legacy-uboot/nor,cus531-32M))
+#$(eval $(call Package/qca-legacy-uboot/nor,cus531-dual))
+$(eval $(call Package/qca-legacy-uboot/nor,ar750))
+$(eval $(call Package/qca-legacy-uboot/nor,x750-4g))
+$(eval $(call Package/qca-legacy-uboot/nor,ar300m))
+$(eval $(call Package/qca-legacy-uboot/nor,mifi-v3))
+$(eval $(call Package/qca-legacy-uboot/nor,x300b))
+$(eval $(call Package/qca-legacy-uboot/nor,xe300))
+$(eval $(call Package/qca-legacy-uboot/nor,x1200))
+

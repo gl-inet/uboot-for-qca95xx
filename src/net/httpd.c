@@ -9,6 +9,7 @@
 #include <net.h>
 #include <asm/byteorder.h>
 #include "httpd.h"
+#include <config.h>
 
 #include "../httpd/uipopt.h"
 #include "../httpd/uip.h"
@@ -43,9 +44,9 @@ void HttpdStart(void){
 	uip_init();
 	httpd_init();
 }
-
+extern uint show_kernel(uint addr);
 int do_http_upgrade(const ulong size, const int upgrade_type){
-	char buf[96];	// erase 0xXXXXXXXX +0xXXXXXXXX; cp.b 0xXXXXXXXX 0xXXXXXXXX 0xXXXXXXXX (68 signs)
+	char buf[200];	// erase 0xXXXXXXXX +0xXXXXXXXX; cp.b 0xXXXXXXXX 0xXXXXXXXX 0xXXXXXXXX (68 signs)
 #if !defined(WEBFAILSAFE_UPLOAD_ART_ADDRESS)
 	flash_info_t *info = &flash_info[0];
 #endif
@@ -56,23 +57,23 @@ int do_http_upgrade(const ulong size, const int upgrade_type){
 		sprintf(buf,
 				"erase 0x%lX +0x%lX; cp.b 0x%lX 0x%lX 0x%lX",
 				WEBFAILSAFE_UPLOAD_UBOOT_ADDRESS,
-				WEBFAILSAFE_UPLOAD_UBOOT_SIZE_IN_BYTES,
+				0x50000,
 				WEBFAILSAFE_UPLOAD_RAM_ADDRESS,
 				WEBFAILSAFE_UPLOAD_UBOOT_ADDRESS,
 				WEBFAILSAFE_UPLOAD_UBOOT_SIZE_IN_BYTES);
 
-#if !defined(CONFIG_FOR_GL_AR300M)
+#if !defined(CONFIG_FOR_GL_BOARD)
 	} else if(upgrade_type == WEBFAILSAFE_UPGRADE_TYPE_FIRMWARE){
 
 		printf("\n\n****************************\n*    FIRMWARE UPGRADING    *\n* DO NOT POWER OFF DEVICE! *\n****************************\n\n");
 		sprintf(buf,
 				"erase 0x%lX +0x%lX; cp.b 0x%lX 0x%lX 0x%lX",
 				WEBFAILSAFE_UPLOAD_KERNEL_ADDRESS,
-				size,
+                size,			
 				WEBFAILSAFE_UPLOAD_RAM_ADDRESS,
 				WEBFAILSAFE_UPLOAD_KERNEL_ADDRESS,
-				size);
-#else
+                size);
+#elif CONFIG_AR300M
 	} else if(upgrade_type == WEBFAILSAFE_UPGRADE_TYPE_FIRMWARE){
 
 		printf("\n\n****************************\n*    FIRMWARE UPGRADING    *\n* DO NOT POWER OFF DEVICE! *\n****************************\n\n");
@@ -80,6 +81,19 @@ int do_http_upgrade(const ulong size, const int upgrade_type){
 				"nand erase; nand write 0x%lX 0 0x%lX",
 				WEBFAILSAFE_UPLOAD_RAM_ADDRESS,
 				size);
+#else
+	} else if(upgrade_type == WEBFAILSAFE_UPGRADE_TYPE_FIRMWARE){
+
+		printf("\n\n****************************\n*    FIRMWARE UPGRADING    *\n* DO NOT POWER OFF DEVICE! *\n****************************\n\n");
+		sprintf(buf,
+				"erase 0x%lX +0x%lX; cp.b 0x%lX 0x%lX 0x%lX; nand erase; nand write 0x%lX 0 0x%lX",
+				WEBFAILSAFE_UPLOAD_KERNEL_ADDRESS,
+				show_kernel(WEBFAILSAFE_UPLOAD_RAM_ADDRESS),
+				WEBFAILSAFE_UPLOAD_RAM_ADDRESS,
+				WEBFAILSAFE_UPLOAD_KERNEL_ADDRESS,
+				show_kernel(WEBFAILSAFE_UPLOAD_RAM_ADDRESS),
+				WEBFAILSAFE_UPLOAD_RAM_ADDRESS+show_kernel(WEBFAILSAFE_UPLOAD_RAM_ADDRESS),
+				size-show_kernel(WEBFAILSAFE_UPLOAD_RAM_ADDRESS));
 #endif
 
 	} else if(upgrade_type == WEBFAILSAFE_UPGRADE_TYPE_ART){
@@ -105,13 +119,36 @@ int do_http_upgrade(const ulong size, const int upgrade_type){
 #endif
 
 	} else if(upgrade_type == WEBFAILSAFE_UPGRADE_TYPE_NOR_FIRMWARE){
+        char com_rc = check_nand();
+#ifdef CONFIG_X750
+        if(1==com_rc){
+            sprintf(buf,
+				"erase 0x%lX +0x%lX; cp.b 0x%lX 0x%lX 0x%lX;nand erase",
+				WEBFAILSAFE_UPLOAD_KERNEL_ADDRESS,
+				size,
+				WEBFAILSAFE_UPLOAD_RAM_ADDRESS,
+				WEBFAILSAFE_UPLOAD_KERNEL_ADDRESS,
+			    //update to nor flash 
+				size);
+        }
+        else{
+            sprintf(buf,
+				"erase 0x%lX +0x%lX; cp.b 0x%lX 0x%lX 0x%lX",
+				WEBFAILSAFE_UPLOAD_KERNEL_ADDRESS,
+				size,
+				WEBFAILSAFE_UPLOAD_RAM_ADDRESS,
+				WEBFAILSAFE_UPLOAD_KERNEL_ADDRESS,
+				size);
+        }
+#else
 		sprintf(buf,
 				"erase 0x%lX +0x%lX; cp.b 0x%lX 0x%lX 0x%lX",
 				WEBFAILSAFE_UPLOAD_KERNEL_ADDRESS,
 				size,
 				WEBFAILSAFE_UPLOAD_RAM_ADDRESS,
 				WEBFAILSAFE_UPLOAD_KERNEL_ADDRESS,
-				size);//update to nor flash 
+				size);
+#endif
 	}
 		
 	else {
@@ -119,9 +156,10 @@ int do_http_upgrade(const ulong size, const int upgrade_type){
 	}
 
 	printf("Executing: %s\n\n", buf);
+	mifi_v3_send_msg("{ \"system\": \"updating\" }");
 	return(run_command(buf, 0));
 
-	return(-1);
+	//return(-1);
 }
 
 // info about current progress of failsafe mode

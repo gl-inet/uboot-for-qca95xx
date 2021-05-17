@@ -31,6 +31,8 @@
 
 #define	CONFIG_TIMESTAMP		/* Print image info with timestamp */
 
+#define CONFIG_SYS_VSNPRINTF
+
 #define CONFIG_ROOTFS_RD
 
 #define	CONFIG_BOOTARGS_RD     "console=ttyS0,115200 root=01:00 rd_start=0x80600000 rd_size=5242880 init=/sbin/init mtdparts=ar7240-nor0:256k(u-boot),64k(u-boot-env),4096k(rootfs),2048k(uImage)"

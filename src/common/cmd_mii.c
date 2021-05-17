@@ -619,10 +619,10 @@ extern flash_info_t flash_info[];	/* info for FLASH chips */
 unsigned long long
 ath_nand_get_cal_offset(const char *ba)
 {
-        char *mtdparts, ch, *pn, *end;
+        char *mtdparts = NULL, ch, *pn, *end;
         unsigned long long off = 0, size;
-
-        mtdparts = strstr(ba, ATH_NAND_NAND_PART);
+	if (ba)
+		mtdparts = strstr(ba, ATH_NAND_NAND_PART);
         if (!mtdparts) {
                 goto bad;
         }
@@ -673,6 +673,7 @@ int do_mac (cmd_tbl_t * cmdtp, int flag, int argc, char *argv[])
 	int     ret;
 	ulong   off, size;
 	nand_info_t *nand;
+	char 	*p;
 		
 	/* 
 	 * caldata partition is of 128k 
@@ -715,10 +716,15 @@ int do_mac (cmd_tbl_t * cmdtp, int flag, int argc, char *argv[])
 
 	serno = 0xFFFFFF & ( (product_id << 13) | (serno & 0x1fff));
 
+	p = getenv("bootargs");
+	if (p == NULL) {
+		printf("No bootargs\n");
+		return 1;
+	}
 	/*
 	 * Get the Offset of Caldata partition
 	 */
-	off = ath_nand_get_cal_offset(getenv("bootargs"));
+	off = ath_nand_get_cal_offset(p);
 	if(off == ATH_CAL_OFF_INVAL) {
 		printf("Invalid CAL offset \n");
 		return 1;
@@ -950,6 +956,7 @@ int do_mac2 (cmd_tbl_t * cmdtp, int flag, int argc, char *argv[])
 	int     ret;
 	ulong   off, size;
 	nand_info_t *nand;
+	char *p;
 		
 	/* 
 	 * caldata partition is of 128k 
@@ -976,10 +983,17 @@ int do_mac2 (cmd_tbl_t * cmdtp, int flag, int argc, char *argv[])
 	}
 	
 #ifdef CONFIG_ATH_NAND_BR
+
+	p = getenv("bootargs");
+	if (p == NULL) {
+		printf("No bootargs\n");
+		return 1;
+	}
+
 	/*
 	 * Get the Offset of Caldata partition
 	 */
-	off = ath_nand_get_cal_offset(getenv("bootargs"));
+	off = ath_nand_get_cal_offset(p);
 	if(off == ATH_CAL_OFF_INVAL) {
 		printf("Invalid CAL offset \n");
 		return 1;

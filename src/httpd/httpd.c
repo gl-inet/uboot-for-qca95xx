@@ -28,12 +28,20 @@
 
 // debug
 //#define DEBUG_UIP
-
+extern void green_led_on(void);
+extern void green_led_off(void);
+extern void red_led_off(void);
 // html files
 extern const struct fsdata_file file_index_html;
+extern const struct fsdata_file file_index_check_nand_html;
 extern const struct fsdata_file file_404_html;
 extern const struct fsdata_file file_flashing_html;
 extern const struct fsdata_file file_fail_html;
+
+extern const struct fsdata_file file_switch_enabled_html;
+extern const struct fsdata_file file_switch_disabled_html;
+extern const struct fsdata_file file_index_sw_en_html;
+extern const struct fsdata_file file_index_sw_dis_html;
 
 extern int webfailsafe_ready_for_upgrade;
 extern int webfailsafe_upgrade_type;
@@ -77,9 +85,9 @@ static void httpd_download_progress(void){
 		post_line_counter++;
 		green_led_off();
 	}
-	if(post_line_counter == 80)
+	if(post_line_counter == 20)
 	green_led_on();
-	if(post_line_counter == 160){
+	if(post_line_counter == 40){
 		/* wan_led_toggle(); */
 	green_led_off();
 		post_line_counter=0;
@@ -179,8 +187,24 @@ static int httpd_findandstore_firstchunk(void){
 
 					}
 					else{
-						printf("## Error: input name not found!\n");
-						return(0);
+						end=(char *)strstr((char *)start, "name=\"gl_firmware\"");
+						if(end){
+								if(strstr((char *)start, ".img\"")||strstr((char *)start, ".ubi\"")){
+										webfailsafe_upgrade_type = WEBFAILSAFE_UPGRADE_TYPE_FIRMWARE;
+									}
+								else if(strstr((char *)start, ".bin\"")){
+									
+										webfailsafe_upgrade_type = WEBFAILSAFE_UPGRADE_TYPE_NOR_FIRMWARE;
+									}
+								else{
+										printf("## Error: input file format error!\n");
+										return(0);
+									}
+							}
+						else{
+							printf("## Error: input name not found!\n");
+							return(0);
+							}
 					}
 
 				}
@@ -211,7 +235,11 @@ static int httpd_findandstore_firstchunk(void){
 				// has correct size (for every type of upgrade)
 
 				// U-Boot
+#ifdef CONFIG_GL_RSA
+				if((webfailsafe_upgrade_type == WEBFAILSAFE_UPGRADE_TYPE_UBOOT) && (hs->upload_total > WEBFAILSAFE_UPLOAD_UBOOT_SIZE_IN_BYTES + 0x10000)){
+#else
 				if((webfailsafe_upgrade_type == WEBFAILSAFE_UPGRADE_TYPE_UBOOT) && (hs->upload_total > WEBFAILSAFE_UPLOAD_UBOOT_SIZE_IN_BYTES)){
+#endif
 
 					printf("## Error: wrong file size, should be: %d bytes!\n", WEBFAILSAFE_UPLOAD_UBOOT_SIZE_IN_BYTES);
 					webfailsafe_upload_failed = 1;
@@ -225,8 +253,10 @@ static int httpd_findandstore_firstchunk(void){
 				// firmware can't exceed: (FLASH_SIZE -  WEBFAILSAFE_UPLOAD_LIMITED_AREA_IN_BYTES)
 				} else if(hs->upload_total > (info->size - WEBFAILSAFE_UPLOAD_LIMITED_AREA_IN_BYTES)){
 
-					printf("## Error: file too big!\n");
-					webfailsafe_upload_failed = 1;
+                    if(webfailsafe_upgrade_type == WEBFAILSAFE_UPGRADE_TYPE_NOR_FIRMWARE){
+                        printf("## Error: file too big!\n");
+                        webfailsafe_upload_failed = 1;
+                    }
 
 				}
 
@@ -283,7 +313,7 @@ void httpd_appcall(void){
 
 			// if we are pooled
 			if(uip_poll()){
-				if(hs->count++ >= 10000){
+				if(hs->count++ >= 100){
 					httpd_state_reset();
 					uip_abort();
 				printf("error 3\n");
@@ -316,6 +346,40 @@ void httpd_appcall(void){
 					return;
 				}
 
+				//Web add DIP switch enable function
+				if(hs->state == STATE_UPLOAD_REQUEST){
+					char *start = NULL;
+
+					// end bufor data with NULL
+					uip_appdata[uip_len] = '\0';
+					
+					if ((char *)strstr((char*)uip_appdata, "gl_yes")){
+						setenv("boot_dev", "on");
+						saveenv();
+
+						fs_open(file_switch_enabled_html.name, &fsfile);
+						httpd_state_reset();
+						hs->state = STATE_FILE_REQUEST;
+						hs->dataptr = (u8_t *)fsfile.data;
+						hs->upload = fsfile.len;
+						uip_send(hs->dataptr, (hs->upload > uip_mss() ? uip_mss() : hs->upload));
+						return;
+					}
+					else if((char *)strstr((char*)uip_appdata, "gl_no")){
+						setenv("boot_dev", "off");
+						saveenv();
+
+						fs_open(file_switch_disabled_html.name, &fsfile);
+						httpd_state_reset();
+						hs->state = STATE_FILE_REQUEST;
+						hs->dataptr = (u8_t *)fsfile.data;
+						hs->upload = fsfile.len;
+						uip_send(hs->dataptr, (hs->upload > uip_mss() ? uip_mss() : hs->upload));
+						return;
+					}			
+					
+				}
+
 				// get file or firmware upload?
 				if(hs->state == STATE_FILE_REQUEST){
 
@@ -343,7 +407,18 @@ void httpd_appcall(void){
 
 					if(uip_appdata[4] == ISO_slash && uip_appdata[5] == 0){
 						printf("we are here 1 \n");
-						fs_open(file_index_html.name, &fsfile);
+						//Display the status of the enable switch option
+#ifdef CONFIG_AR300M
+						if (strcmp(getenv("boot_dev"),"on")==0){
+							fs_open(file_index_sw_en_html.name, &fsfile);
+						}
+						else{
+                            fs_open(file_index_sw_dis_html.name, &fsfile);
+						}
+#else
+                        fs_open(file_index_check_nand_html.name, &fsfile);
+
+#endif
 					} else {
 						printf("we are here 2 \n");
 						// check if we have requested file
@@ -496,7 +571,6 @@ void httpd_appcall(void){
 					} else {
 						printf("Data will be downloaded at 0x%X in RAM\n", WEBFAILSAFE_UPLOAD_RAM_ADDRESS);
 					}
-
 					if(httpd_findandstore_firstchunk()){
 						data_start_found = 1;
 					} else {
@@ -527,6 +601,7 @@ void httpd_appcall(void){
 							}
 
 							webfailsafe_post_done = 0;
+							uip_file_post_done = 0;
 							webfailsafe_upload_failed = 0;
 						}
 
@@ -601,12 +676,22 @@ void httpd_appcall(void){
 						printf("\n\n");
 
 						// end of post upload
+						uip_file_post_done = 1;
 						webfailsafe_post_done = 1;
 						NetBootFileXferSize = (ulong)hs->upload_total;
 
 						// which website will be returned
 						if(!webfailsafe_upload_failed){
+#ifdef CONFIG_GL_RSA
+							if(rsa_verify_update(webfailsafe_upgrade_type, WEBFAILSAFE_UPLOAD_RAM_ADDRESS, NetBootFileXferSize) == 0) {
+								fs_open(file_flashing_html.name, &fsfile);
+							} else {
+								fs_open(file_fail_html.name, &fsfile);
+							}
+							NetBootFileXferSize = NetBootFileXferSize - 0x10000;
+#else
 							fs_open(file_flashing_html.name, &fsfile);
+#endif
 						} else {
 							fs_open(file_fail_html.name, &fsfile);
 						}

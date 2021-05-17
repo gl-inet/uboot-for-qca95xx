@@ -1,0 +1,67 @@
+uip.o: uip/uip.c /usr/include/stdc-predef.h uip/uip.h uip/uipopt.h \
+ unix/uip-conf.h /usr/include/linux/types.h \
+ /usr/include/x86_64-linux-gnu/asm/types.h \
+ /usr/include/asm-generic/types.h /usr/include/asm-generic/int-ll64.h \
+ /usr/include/x86_64-linux-gnu/asm/bitsperlong.h \
+ /usr/include/asm-generic/bitsperlong.h /usr/include/linux/posix_types.h \
+ /usr/include/linux/stddef.h \
+ /usr/include/x86_64-linux-gnu/asm/posix_types.h \
+ /usr/include/x86_64-linux-gnu/asm/posix_types_64.h \
+ /usr/include/asm-generic/posix_types.h apps/webserver/webserver.h \
+ apps/webserver/httpd.h uip/psock.h uip/pt.h uip/lc.h uip/lc-switch.h \
+ apps/webserver/httpd-fs.h apps/dhcpd/dhcpd.h uip/timer.h uip/clock.h \
+ unix/clock-arch.h uip/pt.h uip/uip_arch.h /usr/include/linux/string.h \
+ /usr/include/string.h /usr/include/features.h \
+ /usr/include/x86_64-linux-gnu/sys/cdefs.h \
+ /usr/include/x86_64-linux-gnu/bits/wordsize.h \
+ /usr/include/x86_64-linux-gnu/gnu/stubs.h \
+ /usr/include/x86_64-linux-gnu/gnu/stubs-64.h \
+ /usr/lib/gcc/x86_64-linux-gnu/5/include/stddef.h /usr/include/xlocale.h
+uip_arp.o: uip/uip_arp.c /usr/include/stdc-predef.h uip/uip_arp.h \
+ uip/uip.h uip/uipopt.h unix/uip-conf.h /usr/include/linux/types.h \
+ /usr/include/x86_64-linux-gnu/asm/types.h \
+ /usr/include/asm-generic/types.h /usr/include/asm-generic/int-ll64.h \
+ /usr/include/x86_64-linux-gnu/asm/bitsperlong.h \
+ /usr/include/asm-generic/bitsperlong.h /usr/include/linux/posix_types.h \
+ /usr/include/linux/stddef.h \
+ /usr/include/x86_64-linux-gnu/asm/posix_types.h \
+ /usr/include/x86_64-linux-gnu/asm/posix_types_64.h \
+ /usr/include/asm-generic/posix_types.h apps/webserver/webserver.h \
+ apps/webserver/httpd.h uip/psock.h uip/pt.h uip/lc.h uip/lc-switch.h \
+ apps/webserver/httpd-fs.h apps/dhcpd/dhcpd.h uip/timer.h uip/clock.h \
+ unix/clock-arch.h uip/pt.h /usr/include/linux/string.h \
+ /usr/include/string.h /usr/include/features.h \
+ /usr/include/x86_64-linux-gnu/sys/cdefs.h \
+ /usr/include/x86_64-linux-gnu/bits/wordsize.h \
+ /usr/include/x86_64-linux-gnu/gnu/stubs.h \
+ /usr/include/x86_64-linux-gnu/gnu/stubs-64.h \
+ /usr/lib/gcc/x86_64-linux-gnu/5/include/stddef.h /usr/include/xlocale.h
+uiplib.o: uip/uiplib.c /usr/include/stdc-predef.h uip/uip.h uip/uipopt.h \
+ unix/uip-conf.h /usr/include/linux/types.h \
+ /usr/include/x86_64-linux-gnu/asm/types.h \
+ /usr/include/asm-generic/types.h /usr/include/asm-generic/int-ll64.h \
+ /usr/include/x86_64-linux-gnu/asm/bitsperlong.h \
+ /usr/include/asm-generic/bitsperlong.h /usr/include/linux/posix_types.h \
+ /usr/include/linux/stddef.h \
+ /usr/include/x86_64-linux-gnu/asm/posix_types.h \
+ /usr/include/x86_64-linux-gnu/asm/posix_types_64.h \
+ /usr/include/asm-generic/posix_types.h apps/webserver/webserver.h \
+ apps/webserver/httpd.h uip/psock.h uip/pt.h uip/lc.h uip/lc-switch.h \
+ apps/webserver/httpd-fs.h apps/dhcpd/dhcpd.h uip/timer.h uip/clock.h \
+ unix/clock-arch.h uip/pt.h uip/uiplib.h
+timer.o: uip/timer.c /usr/include/stdc-predef.h uip/clock.h \
+ unix/clock-arch.h uip/timer.h
+http-strings.o: apps/webserver/http-strings.c /usr/include/stdc-predef.h
+httpd-fs.o: apps/webserver/httpd-fs.c /usr/include/stdc-predef.h \
+ apps/webserver/httpd.h uip/psock.h uip/uipopt.h unix/uip-conf.h \
+ /usr/include/linux/types.h /usr/include/x86_64-linux-gnu/asm/types.h \
+ /usr/include/asm-generic/types.h /usr/include/asm-generic/int-ll64.h \
+ /usr/include/x86_64-linux-gnu/asm/bitsperlong.h \
+ /usr/include/asm-generic/bitsperlong.h /usr/include/linux/posix_types.h \
+ /usr/include/linux/stddef.h \
+ /usr/include/x86_64-linux-gnu/asm/posix_types.h \
+ /usr/include/x86_64-linux-gnu/asm/posix_types_64.h \
+ /usr/include/asm-generic/posix_types.h apps/webserver/webserver.h \
+ apps/dhcpd/dhcpd.h uip/timer.h uip/clock.h unix/clock-arch.h uip/pt.h \
+ uip/lc.h uip/lc-switch.h uip/pt.h apps/webserver/httpd-fs.h \
+ apps/webserver/httpd-fsdata.h uip/uip.h apps/webserver/httpd-fsdata.c

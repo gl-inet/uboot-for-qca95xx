@@ -139,6 +139,7 @@ static unsigned short int lastport;       /* Keeps track of the last port used f
 volatile u8_t uip_acc32[4];
 static u8_t c, opt;
 static unsigned short int tmp16;
+char uip_file_post_done=0;
 
 /* Structures and definitions. */
 #define TCP_FIN 0x01
@@ -1224,8 +1225,11 @@ uip_process(u8_t flag)
       uip_appdata += (BUF->urgp[0] << 8) | BUF->urgp[1];
       uip_len -= (BUF->urgp[0] << 8) | BUF->urgp[1];
     }
-    
-    
+
+	//After the file transfer is completed, an emergency data may arrive and the ACK is returned directly
+    if((uip_len>0) && (BUF->flags == 0x18)&&(uip_file_post_done == 1)){
+		goto tcp_send_ack;
+	}
     /* If uip_len > 0 we have TCP data in the packet, and we flag this
        by setting the UIP_NEWDATA flag and update the sequence number
        we acknowledge. If the application has stopped the dataflow

@@ -29,6 +29,8 @@
 #ifndef FLASH_SIZE
 #define FLASH_SIZE 8
 #endif
+
+#define CONFIG_SYS_VSNPRINTF
 /*-----------------------------------------------------------------------
  * FLASH and environment organization
  */

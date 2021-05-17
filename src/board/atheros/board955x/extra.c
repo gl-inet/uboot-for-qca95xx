@@ -87,6 +87,7 @@ void ath_set_tuning_caps(void)
 #endif /* CONFIG_ATH_NAND_BR */
 
 	val =	XTAL_TCXODET_SET(0x0) |
+		XTAL_XTAL_DRVSTR_SET(0x3) |
 		XTAL_XTAL_CAPINDAC_SET(0x45) |
 		XTAL_XTAL_CAPOUTDAC_SET(0x45) |
 		XTAL_XTAL_SHORTXIN_SET(0x0) |
@@ -103,14 +104,11 @@ void ath_set_tuning_caps(void)
 		XTAL_SPARE_SET(0xf);
 
 	/* checking feature enable bit 6 and caldata is valid */
-	if ((eep->featureEnable & 0x40) && (eep->pad[0x0] != 0xff)) {
+	if ((eep) && (eep->featureEnable & 0x40) && (eep->pad[0x0] != 0xff)) {
 		val &= ~(XTAL_XTAL_CAPINDAC_MASK | XTAL_XTAL_CAPOUTDAC_MASK);
 		val |=	XTAL_XTAL_CAPINDAC_SET(eep->params_for_tuning_caps[0]) |
 			XTAL_XTAL_CAPOUTDAC_SET(eep->params_for_tuning_caps[0]);
 
-  			/* DRVSTR value should be set 3 only for 5G */ 
-        		if((eep->pad[33] & 0x01))    
-            			val |= XTAL_XTAL_DRVSTR_SET(0x3) ;
 	}
 
 	ath_reg_wr(XTAL_ADDRESS, val);

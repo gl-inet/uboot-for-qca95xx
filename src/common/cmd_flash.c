@@ -305,6 +305,106 @@ int do_flinfo ( cmd_tbl_t *cmdtp, int flag, int argc, char *argv[])
 }
 #endif /* #ifndef COMPRESSED_UBOOT */
 
+#if ENABLE_EXT_ADDR_SUPPORT
+int do_flread_ext (cmd_tbl_t *cmdtp, int flag, int argc, char *argv[])
+{
+	flash_info_t *info;
+	ulong buf, offset, len;
+	int   bank = 1;
+
+	if (argc < 4) {
+		printf ("Usage:\n%s\n%s\n", cmdtp->usage, cmdtp->help);
+		return 1;
+	}
+	buf = simple_strtoul(argv[1], NULL, 16);
+	offset = simple_strtoul(argv[2], NULL, 16);
+	len = simple_strtoul(argv[3], NULL, 16);
+	if (argc > 4) {
+		bank = simple_strtoul(argv[4], NULL, 16);
+		if ((bank < 1) || (bank > CFG_MAX_FLASH_BANKS)) {
+			printf ("Only FLASH Banks # 1 ... # %d supported\n",
+			CFG_MAX_FLASH_BANKS);
+			return 1;
+		}
+	}
+	info = &flash_info[bank - 1];
+
+	if ((offset + len) > info->size){
+		printf ("Bad parameters, 'offset' + 'len' should < 0x%x\n", info->size);
+		return 1;
+	}
+	return(read_buff_ext(info, (uchar *)buf, offset, len));
+}
+
+int do_flwrite_ext (cmd_tbl_t *cmdtp, int flag, int argc, char *argv[])
+{
+    flash_info_t *info;
+    ulong source, offset, len;
+	int   bank = 1;
+
+    if (argc < 4) {
+        printf ("Usage:\n%s\n%s\n", cmdtp->usage, cmdtp->help);
+		return 1;
+	}
+	source = simple_strtoul(argv[1], NULL, 16);
+	offset = simple_strtoul(argv[2], NULL, 16);
+	len = simple_strtoul(argv[3], NULL, 16);
+	if (argc > 4) {
+		bank = simple_strtoul(argv[4], NULL, 16);
+		if ((bank < 1) || (bank > CFG_MAX_FLASH_BANKS)) {
+			printf ("Only FLASH Banks # 1 ... # %d supported\n",
+			CFG_MAX_FLASH_BANKS);
+			return 1;
+		}
+	}
+
+	info = &flash_info[bank - 1];
+	if ((offset + len) > info->size){
+		printf ("Bad parameters, 'offset' + 'len' should < 0x%x\n", info->size);
+	    return 1;
+	}
+
+	return(write_buff_ext(info, (uchar *)source, offset, len));
+}
+
+int do_flerase_ext (cmd_tbl_t *cmdtp, int flag, int argc, char *argv[])
+{
+	flash_info_t *info;
+	ulong offset, len;
+	int sect_first, sect_last, sect_size;
+	int   bank = 1;
+
+    if (argc < 3) {
+	     printf ("Usage:\n%s\n%s\n", cmdtp->usage, cmdtp->help);
+	     return 1;
+	}
+	offset = simple_strtoul(argv[1], NULL, 16);
+	len = simple_strtoul(argv[2], NULL, 16);
+
+	if (argc > 4) {
+		bank = simple_strtoul(argv[4], NULL, 16);
+		if ((bank < 1) || (bank > CFG_MAX_FLASH_BANKS)) {
+			printf ("Only FLASH Banks # 1 ... # %d supported\n",
+			CFG_MAX_FLASH_BANKS);
+			return 1;
+		}
+	}
+
+	info = &flash_info[bank - 1];
+	if ((offset + len) > info->size){
+		printf ("Bad parameters, 'offset' + 'len' should < 0x%x\n", info->size);
+		return 1;
+	}
+	sect_size = info->size / info->sector_count;
+	sect_first = offset / sect_size;
+	sect_last = (offset + len - 1) / sect_size;
+	printf("flash size:0x%x offset:0x%x len:0x%x sect_size:0x%x first:0x%x last:0x%x\n",
+			info->size, offset, len, sect_size, sect_first, sect_last);
+
+	return(flash_erase(info, sect_first, sect_last));	
+}
+#endif /* #if ENABLE_EXT_ADDR_SUPPORT */
+
 int do_flerase (cmd_tbl_t *cmdtp, int flag, int argc, char *argv[])
 {
 	flash_info_t *info;
@@ -758,6 +858,32 @@ U_BOOT_CMD(
 	"\n",
 );
 #endif
+
+#if ENABLE_EXT_ADDR_SUPPORT
+U_BOOT_CMD(
+	read_ext,   5,   1,  do_flread_ext,
+	"read_ext   - read SPI NOR FLASH memory(0-32M space)\n",
+	"read_ext dst offset(offset of the flash) len [N]\n"
+	"    - read 'len' bytes from FLASH bank #N addr 'start' to memory addr 'dst'\n"
+	"    - 'N' is optional, default the first bank\n"
+    );
+
+U_BOOT_CMD(
+	erase_ext,   4,   1,  do_flerase_ext,
+	"erase_ext   - erase SPI NOR FLASH memory(0-32M space)\n",
+	"erase_ext start(offset of the flash) len [N]\n"
+	"    - erase FLASH bank #N from addr 'start' to the end of sect addr 'start'+'len'-1\n"
+	"    - 'N' is optional, default the first bank\n"
+	);
+ 
+U_BOOT_CMD(
+	write_ext,   5,   1,  do_flwrite_ext,
+	"write_ext   - write SPI NOR FLASH memory(0-32M space)\n",
+	"write_ext src dst(offset of the flash) len [N]\n"
+	"    - copy 'len' bytes from memory addr 'src' to FLASH bank #N addr 'start'\n"
+	"    - 'N' is optional, default the first bank\n"
+	);
+#endif /* #if ENABLE_EXT_ADDR_SUPPORT */
 
 #undef	TMP_ERASE
 #undef	TMP_PROT_ON

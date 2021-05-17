@@ -689,7 +689,7 @@ int ag7240_enet_initialize(bd_t * bis)
     memset(ag7240_macs[i], 0, sizeof(ag7240_macs[i]));
     memset(dev[i], 0, sizeof(dev[i]));
 
-    sprintf(dev[i]->name, "eth%d", i);
+    snprintf(dev[i]->name, sizeof(dev[i]->name), "eth%d", i);
     ag7240_get_ethaddr(dev[i]);
 
     ag7240_macs[i]->mac_unit = i;

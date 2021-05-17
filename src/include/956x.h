@@ -821,6 +821,68 @@
 #define PCIe_DPLL2_RESET_TEST_RESET                                  0x0 // 0
 #define PCIe_DPLL2_ADDRESS                                           0x18116c84
 
+#define PCIE_DPLL3_DO_MEAS_MSB						31
+#define PCIE_DPLL3_DO_MEAS_LSB						31
+#define PCIE_DPLL3_DO_MEAS_MASK						0x80000000
+#define PCIE_DPLL3_DO_MEAS_GET(x)					(((x) & PCIE_DPLL3_DO_MEAS_MASK) >> PCIE_DPLL3_DO_MEAS_LSB)
+#define PCIE_DPLL3_DO_MEAS_SET(x)					(((x) << PCIE_DPLL3_DO_MEAS_LSB) & PCIE_DPLL3_DO_MEAS_MASK)
+#define PCIE_DPLL3_DO_MEAS_RESET					0x0 // 0
+#define PCIE_DPLL3_VC_MEAS0_MSB						30
+#define PCIE_DPLL3_VC_MEAS0_LSB						13
+#define PCIE_DPLL3_VC_MEAS0_MASK					0x7fffe000
+#define PCIE_DPLL3_VC_MEAS0_GET(x)					(((x) & PCIE_DPLL3_VC_MEAS0_MASK) >> PCIE_DPLL3_VC_MEAS0_LSB)
+#define PCIE_DPLL3_VC_MEAS0_SET(x)					(((x) << PCIE_DPLL3_VC_MEAS0_LSB) & PCIE_DPLL3_VC_MEAS0_MASK)
+#define PCIE_DPLL3_VC_MEAS0_RESET					0x0 // 0
+#define PCIE_DPLL3_VC_DIFF0_MSB						12
+#define PCIE_DPLL3_VC_DIFF0_LSB						3
+#define PCIE_DPLL3_VC_DIFF0_MASK					0x00001ff8
+#define PCIE_DPLL3_VC_DIFF0_GET(x)					(((x) & PCIE_DPLL3_VC_DIFF0_MASK) >> PCIE_DPLL3_VC_DIFF0_LSB)
+#define PCIE_DPLL3_VC_DIFF0_SET(x)					(((x) << PCIE_DPLL3_VC_DIFF0_LSB) & PCIE_DPLL3_VC_DIFF0_MASK)
+#define PCIE_DPLL3_VC_DIFF0_RESET					0x0 // 0
+#define PCIE_DPLL3_LOCAL_PLL_PWD_MSB					2
+#define PCIE_DPLL3_LOCAL_PLL_PWD_LSB					2
+#define PCIE_DPLL3_LOCAL_PLL_PWD_MASK					0x00000004
+#define PCIE_DPLL3_LOCAL_PLL_PWD_GET(x)					(((x) & PCIE_DPLL3_LOCAL_PLL_PWD_MASK) >> PCIE_DPLL3_LOCAL_PLL_PWD_LSB)
+#define PCIE_DPLL3_LOCAL_PLL_PWD_SET(x)					(((x) << PCIE_DPLL3_LOCAL_PLL_PWD_LSB) & PCIE_DPLL3_LOCAL_PLL_PWD_MASK)
+#define PCIE_DPLL3_LOCAL_PLL_PWD_RESET					0x0 // 0
+#define PCIE_DPLL3_SPARE_MSB						1
+#define PCIE_DPLL3_SPARE_LSB						0
+#define PCIE_DPLL3_SPARE_MASK						0x00000003
+#define PCIE_DPLL3_SPARE_GET(x)						(((x) & PCIE_DPLL3_SPARE_MASK) >> PCIE_DPLL3_SPARE_LSB)
+#define PCIE_DPLL3_SPARE_SET(x)						(((x) << PCIE_DPLL3_SPARE_LSB) & PCIE_DPLL3_SPARE_MASK)
+#define PCIE_DPLL3_SPARE_RESET						0x0 // 0
+#define PCIE_DPLL3_ADDR							0x0008
+#define PCIE_DPLL3_OFFSET						0x0008
+#define PCIE_DPLL3_SW_MASK						0xffffffff
+#define PCIE_DPLL3_RSTMASK						0xffffffff
+#define PCIE_DPLL3_RESET						0x00000000
+#define PCIE_DPLL3_ADDRESS						0x18116c88
+
+#define PCIE_DPLL1_REFDIV_MSB						31
+#define PCIE_DPLL1_REFDIV_LSB						27
+#define PCIE_DPLL1_REFDIV_MASK						0xf8000000
+#define PCIE_DPLL1_REFDIV_GET(x)					(((x) & PCIE_DPLL1_REFDIV_MASK) >> PCIE_DPLL1_REFDIV_LSB)
+#define PCIE_DPLL1_REFDIV_SET(x)					(((x) << PCIE_DPLL1_REFDIV_LSB) & PCIE_DPLL1_REFDIV_MASK)
+#define PCIE_DPLL1_REFDIV_RESET						0x1 // 1
+#define PCIE_DPLL1_NINT_MSB						26
+#define PCIE_DPLL1_NINT_LSB						18
+#define PCIE_DPLL1_NINT_MASK						0x07fc0000
+#define PCIE_DPLL1_NINT_GET(x)						(((x) & PCIE_DPLL1_NINT_MASK) >> PCIE_DPLL1_NINT_LSB)
+#define PCIE_DPLL1_NINT_SET(x)						(((x) << PCIE_DPLL1_NINT_LSB) & PCIE_DPLL1_NINT_MASK)
+#define PCIE_DPLL1_NINT_RESET						0x10 // 16
+#define PCIE_DPLL1_NFRAC_MSB						17
+#define PCIE_DPLL1_NFRAC_LSB						0
+#define PCIE_DPLL1_NFRAC_MASK						0x0003ffff
+#define PCIE_DPLL1_NFRAC_GET(x)						(((x) & PCIE_DPLL1_NFRAC_MASK) >> PCIE_DPLL1_NFRAC_LSB)
+#define PCIE_DPLL1_NFRAC_SET(x)						(((x) << PCIE_DPLL1_NFRAC_LSB) & PCIE_DPLL1_NFRAC_MASK)
+#define PCIE_DPLL1_NFRAC_RESET						0x0 // 0
+#define PCIE_DPLL1_ADDR							0x0000
+#define PCIE_DPLL1_OFFSET						0x0000
+#define PCIE_DPLL1_SW_MASK						0xffffffff
+#define PCIE_DPLL1_RSTMASK						0xffffffff
+#define PCIE_DPLL1_RESET						0x08400000
+#define PCIE_DPLL1_ADDRESS						0x18116c80
+
 #define DDR_DPLL2_LOCAL_PLL_MSB                                      31
 #define DDR_DPLL2_LOCAL_PLL_LSB                                      31
 #define DDR_DPLL2_LOCAL_PLL_MASK                                     0x80000000
@@ -3507,6 +3569,8 @@
 #define ATH_SPI_CS_DIS      0x70000
 #define ATH_SPI_CE_LOW      0x60000
 #define ATH_SPI_CE_HIGH     0x60100
+#define ATH_SPI_CD_LOW      0x70000
+#define ATH_SPI_CD_HIGH     0x70100
 
 #define ATH_SPI_SECTOR_SIZE (1024*64)
 #define ATH_SPI_PAGE_SIZE   256
@@ -3529,6 +3593,15 @@
 #define ATH_SPI_CMD_SECTOR_ERASE    0xd8
 #define ATH_SPI_CMD_CHIP_ERASE      0xc7
 #define ATH_SPI_CMD_RDID        0x9f
+/* commands for 32MB and above */
+#define ATH_SPI_CMD_WREAR       0xC5
+#define ATH_SPI_CMD_RDEAR       0xC8
+#define ATH_SPI_CMD_READ        0x03
+#define ATH_SPI_CMD_EN4B        0xB7
+#define ATH_SPI_CMD_EX4B        0xE9
+#define ATH_SPI_CMD_WRDIS       0x04
+#define ATH_SPI_CMD_RD_STATUS_2 0x35
+#define ATH_SPI_CMD_RD_STATUS_3 0x15
 
 #if defined(CFG_ATH_EMULATION)
 

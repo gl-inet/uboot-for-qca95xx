@@ -44,6 +44,10 @@
 
 int do_reset(cmd_tbl_t *cmdtp, int flag, int argc, char *argv[])
 {
+#ifdef  CONFIG_MIFI_V3
+	mifi_v3_send_msg("{ \"system\": \"reboot\" }");
+	udelay(10000);
+#endif
 #if defined(CONFIG_ATHEROS)
 	while (1) {
 		ath_reg_wr(RST_RESET_ADDRESS, RST_RESET_FULL_CHIP_RESET_SET(1));

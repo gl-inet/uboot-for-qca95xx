@@ -67,6 +67,6 @@ void ath_set_tuning_caps(void)
 #define __str(x)	# x
 #define str(x)		__str(x)
 
-	/* printf("Setting " str(XTAL_ADDRESS) " to 0x%x\n", val); */
+	printf("Setting " str(XTAL_ADDRESS) " to 0x%x\n", val);
 	return;
 }

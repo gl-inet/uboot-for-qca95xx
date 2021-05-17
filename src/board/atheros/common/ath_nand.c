@@ -861,7 +861,7 @@ ath_nand_erase(struct mtd_info *mtd, struct erase_info *instr)
 {
 	ulong		s_first, i;
 	unsigned	n, j;
-	int		ret, bad = 0;
+	int		ret = -EINVAL, bad = 0;
 	ath_nand_sc_t	*sc = mtd->priv;
 
 	if (instr->addr + instr->len > mtd->size) {
@@ -1203,7 +1203,7 @@ ath_parse_read_id(ath_nand_sc_t *sc)
 
 	for (i = 0; i < nand_manuf_ids[i].id; i++) {
 		if (nand_manuf_ids[i].id == sc->nid.vid) {
-			printk(nand_manuf_ids[i].name);
+			printk("%s\n",nand_manuf_ids[i].name);
 			break;
 		}
 	}
@@ -1439,7 +1439,7 @@ ath_nand_set_ns(struct mtd_info *mtd)
 		return;
 	}
 
-	sprintf(ns, "-0x%x-0x%x", mtd->erasesize, mtd->writesize);
+	snprintf(ns, sizeof(ns), "-0x%x-0x%x", mtd->erasesize, mtd->writesize);
 	setenv(ATH_NAND_SPEC, ns);
 	printf("set " ATH_NAND_SPEC " %s\n", ns);
 }

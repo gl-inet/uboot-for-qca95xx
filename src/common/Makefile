@@ -74,13 +74,18 @@ COBJS	= main.o ACEX1K.o altera.o bedbug.o circbuf.o \
 	  virtex2.o xilinx.o crc16.o xyzModem.o
 endif
 
-#ifdef __DEVICE_CHECK
-COBJS	+= device_check.o
-#endif
-
 ifndef BOOT_FROM_NAND
 COBJS	+= flash.o
 endif
+
+OBJS    += device_check.o
+COBJS	+= device_check.o
+
+#add led command
+COBJS	+= cmd_led.o
+COBJS	+= cmd_wmac.o
+
+OBJS   += cmd_net.o
 
 ifeq ($(VXWORKS_UBOOT),1)
 COBJS	+=  cmd_elf.o

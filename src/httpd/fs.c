@@ -66,27 +66,20 @@ static u8_t
 fs_strcmp(const char *str1, const char *str2)
 {
   u8_t i;
-  i = 0;
- loop:
-  if(str2[i] == 0 ||
-     str1[i] == '\r' || 
-     str1[i] == '\n') {
-    return 0;
+  for(i=0;;i++)
+  {
+	  if(str1[i] !=str2[i])
+		  return 1;
+	  else if(str1[i]=='\0')
+		  return 0;
   }
 
-  if(str1[i] != str2[i]) {
-    return 1;
-  }
-
-
-  ++i;
-  goto loop;
 }
 /*-----------------------------------------------------------------------------------*/
 int
 fs_open(const char *name, struct fs_file *file)
 {
-printf("open file: %s",name);
+    printf("open file: %s",name);
 
 #ifdef FS_STATISTICS
 #if FS_STATISTICS == 1

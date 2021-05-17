@@ -41,6 +41,7 @@ typedef volatile unsigned char	vu_char;
 #if defined(CONFIG_PCI) && defined(CONFIG_440)
 #include <pci.h>
 #endif
+
 #if defined(CONFIG_8xx)
 #include <asm/8xx_immap.h>
 #if defined(CONFIG_MPC852)	|| defined(CONFIG_MPC852T)	|| \
@@ -208,7 +209,7 @@ int	autoscript (ulong addr);
 void	print_image_hdr (image_header_t *hdr);
 
 extern ulong load_addr;		/* Default Load Address */
-
+extern char new_spi_nand_flag;
 /* common/cmd_nvedit.c */
 int	env_init     (void);
 void	env_relocate (void);
@@ -546,6 +547,19 @@ void	panic(const char *fmt, ...);
 int	sprintf(char * buf, const char *fmt, ...);
 int	vsprintf(char *buf, const char *fmt, va_list args);
 
+#ifdef CONFIG_SYS_VSNPRINTF
+int	vsnprintf(char *buf, size_t size, const char *fmt, va_list args);
+int	snprintf(char *buf, size_t size, const char *fmt, ...);
+#else
+/*
+ * Use macros to silently drop the size parameter. Note that the 'cn'
+ * versions are the same as the 'n' versions since the functions assume
+ * there is always enough buffer space when !CONFIG_SYS_VSNPRINTF
+ */
+#define snprintf(buf, size, fmt, args...) sprintf(buf, fmt, ##args)
+#define vsnprintf(buf, size, fmt, args...) vsprintf(buf, fmt, ##args)
+#endif /* CONFIG_SYS_VSNPRINTF */
+
 /* lib_generic/crc32.c */
 ulong crc32 (ulong, const unsigned char *, uint);
 ulong crc32_no_comp (ulong, const unsigned char *, uint);
@@ -606,5 +620,12 @@ void	show_boot_progress (int status);
 #error CONFIG_INIT_CRITICAL is depracted!
 #error Read section CONFIG_SKIP_LOWLEVEL_INIT in README.
 #endif
+
+#ifdef  CONFIG_MIFI_V3
+#define mifi_v3_send_msg printf
+#else
+#define mifi_v3_send_msg(a,...) asm volatile ("nop;\n\t"::)
+#endif
+
 
 #endif	/* __COMMON_H_ */

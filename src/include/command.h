@@ -104,22 +104,4 @@ cmd_tbl_t __u_boot_cmd_##name Struct_Section = {#name, maxargs, rep, cmd, usage}
 
 #endif	/* CFG_LONGHELP */
 
-#define GPIO_LED_STATUS	(1 << 14)
-#define GPIO_LED_GREEN	(1 << 13)
-#define GPIO_LED_RED	(1 << 12)
-
-int reset_button_status(void);
-
-void status_led_on(void);
-void status_led_off(void);
-void status_led_toggle(void);
-void green_led_on(void);
-void green_led_off(void);
-void green_led_toggle(void);
-void red_led_on(void);
-void red_led_off(void);
-void red_led_toggle(void);
-void all_led_on(void);
-void all_led_off(void);
-
 #endif	/* __COMMAND_H */

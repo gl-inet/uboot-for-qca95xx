@@ -1,5 +1,5 @@
 /* 
- * Copyright (c) 2014 Qualcomm Atheros, Inc.
+ * Copyright (c) 2014, 2016 The Linux Foundation. All rights reserved.
  * 
  * Permission to use, copy, modify, and/or distribute this software for any
  * purpose with or without fee is hereby granted, provided that the above
@@ -41,7 +41,6 @@
 
 int ath_gmac_miiphy_read(char *devname, uint32_t phaddr, uint8_t reg, uint16_t *data);
 int ath_gmac_miiphy_write(char *devname, uint32_t phaddr, uint8_t reg, uint16_t data);
-extern void ath_sys_frequency(uint32_t *, uint32_t *, uint32_t *);
 
 #ifndef CFG_ATH_GMAC_NMACS
 #define CFG_ATH_GMAC_NMACS	1
@@ -415,18 +414,18 @@ static void ath_gmac_hw_start(ath_gmac_mac_t *mac)
 	ath_gmac_reg_wr(mac, ATH_MAC_FIFO_CFG_1, 0x10ffff);
 	ath_gmac_reg_wr(mac, ATH_MAC_FIFO_CFG_2, 0xAAA0555);
 
-	ath_gmac_reg_rmw_set(mac, ATH_MAC_FIFO_CFG_4, 0x3ffff);
+	ath_gmac_reg_rmw_set(mac, ATH_MAC_FIFO_CFG_4, 0x3fdff);
 	/*
 	 * Setting Drop CRC Errors, Pause Frames,Length Error frames
 	 * and Multi/Broad cast frames.
 	 */
 
-	ath_gmac_reg_wr(mac, ATH_MAC_FIFO_CFG_5, 0x7eccf);
+	ath_gmac_reg_wr(mac, ATH_MAC_FIFO_CFG_5, 0x7efcf);
 
 	ath_gmac_reg_wr(mac, ATH_MAC_FIFO_CFG_3, 0x1f00140);
 
-	printf(": cfg1 %#x cfg2 %#x\n", ath_gmac_reg_rd(mac, ATH_MAC_CFG1),
-			ath_gmac_reg_rd(mac, ATH_MAC_CFG2));
+	printf(": cfg1 %#x cfg2 %#x fifo_cfg4 %#x\n", ath_gmac_reg_rd(mac, ATH_MAC_CFG1),
+			ath_gmac_reg_rd(mac, ATH_MAC_CFG2),ath_gmac_reg_rd(mac, ATH_MAC_FIFO_CFG_4));
 
 
 }
@@ -442,7 +441,7 @@ static int ath_gmac_check_link(ath_gmac_mac_t *mac)
 	mac->link = link;
 
 	if(!mac->link) {
-		printf("%s link down\n",mac->dev->name);
+//		printf("%s link down\n",mac->dev->name);
 		return 0;
 	}
 
@@ -490,7 +489,7 @@ static int ath_gmac_check_link(ath_gmac_mac_t *mac)
 	mac->duplex = duplex;
 	mac->speed = speed;
 
-	printf("dup %d speed %d\n", duplex, speed);
+//	printf("dup %d speed %d\n", duplex, speed);
 
 	ath_gmac_set_mac_duplex(mac,duplex);
 
@@ -776,7 +775,7 @@ int ath_gmac_enet_initialize(bd_t * bis)
 		memset(ath_gmac_macs[i], 0, sizeof(ath_gmac_macs[i]));
 		memset(dev[i], 0, sizeof(dev[i]));
 
-		sprintf(dev[i]->name, "eth%d", i);
+		snprintf(dev[i]->name, sizeof(dev[i]->name), "eth%d", i);
 		ath_gmac_get_ethaddr(dev[i]);
 
 		ath_gmac_macs[i]->mac_unit = i;

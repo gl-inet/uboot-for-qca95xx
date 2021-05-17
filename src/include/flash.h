@@ -88,6 +88,10 @@ extern void flash_protect (int flag, ulong from, ulong to, flash_info_t *info);
 extern int flash_write (char *, ulong, ulong);
 extern flash_info_t *addr2info (ulong);
 extern int write_buff (flash_info_t *info, uchar *src, ulong addr, ulong cnt);
+#if ENABLE_EXT_ADDR_SUPPORT
+extern int write_buff_ext (flash_info_t *info, uchar *src, ulong offset, ulong cnt);
+extern int read_buff_ext (flash_info_t *info, uchar *buf, ulong offset, ulong cnt);
+#endif
 
 /* board/?/flash.c */
 #if defined(CFG_FLASH_PROTECTION)
@@ -418,7 +422,6 @@ extern void flash_read_factory_serial(flash_info_t * info, void * buffer, int of
 #define FLASH_S29GL064M 0x00F0		/* Spansion S29GL064M-R6		*/
 
 #define FLASH_M25P64    0x00F2      
-
 #define FLASH_CUSTOM    0x1111
 #define FLASH_UNKNOWN	0xFFFF		/* unknown flash type			*/
 

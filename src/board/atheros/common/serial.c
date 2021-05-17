@@ -150,9 +150,18 @@ int serial_init(void)
 
 
 #else
+
+#ifdef CONFIG_MIFI_V3
+	ath_reg_rmw_set(GPIO_OUT_FUNCTION0_ADDRESS,
+			GPIO_OUT_FUNCTION0_ENABLE_GPIO_2_SET(0x16));
+#elif CONFIG_XE300
+       ath_reg_rmw_set(GPIO_OUT_FUNCTION0_ADDRESS,
+                       GPIO_OUT_FUNCTION0_ENABLE_GPIO_2_SET(0x16));
+
+#else
 	ath_reg_rmw_set(GPIO_OUT_FUNCTION2_ADDRESS,
 			GPIO_OUT_FUNCTION2_ENABLE_GPIO_10_SET(0x16));
-
+#endif
 	ath_reg_rmw_clear(GPIO_IN_ENABLE0_ADDRESS,
 			GPIO_IN_ENABLE0_UART_SIN_SET(0xff));
 

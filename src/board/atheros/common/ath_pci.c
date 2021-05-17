@@ -230,23 +230,23 @@ pci_init_board (void)
 	}
 
 #if defined(CONFIG_MACH_QCA953x)
-	/* if (ath_reg_rd(RST_BOOTSTRAP_ADDRESS) & RST_BOOTSTRAP_TESTROM_ENABLE_MASK) {  */
-	/* 	ath_reg_rmw_clear(RST_MISC2_ADDRESS, RST_MISC2_PERSTN_RCPHY_SET(1)); */
+	if (ath_reg_rd(RST_BOOTSTRAP_ADDRESS) & RST_BOOTSTRAP_TESTROM_ENABLE_MASK) { 
+		ath_reg_rmw_clear(RST_MISC2_ADDRESS, RST_MISC2_PERSTN_RCPHY_SET(1));
 
-	/* 	ath_reg_wr(PCIE_PHY_REG_1_ADDRESS, PCIE_PHY_REG_1_RESET_1);  */
-	/* 	ath_reg_wr(PCIE_PHY_REG_3_ADDRESS, PCIE_PHY_REG_3_RESET_1);  */
+		ath_reg_wr(PCIE_PHY_REG_1_ADDRESS, PCIE_PHY_REG_1_RESET_1); 
+		ath_reg_wr(PCIE_PHY_REG_3_ADDRESS, PCIE_PHY_REG_3_RESET_1); 
 
-	/* 	ath_reg_rmw_set(PCIE_PWR_MGMT_ADDRESS, PCIE_PWR_MGMT_ASSERT_CLKREQN_SET(1)); */
+		ath_reg_rmw_set(PCIE_PWR_MGMT_ADDRESS, PCIE_PWR_MGMT_ASSERT_CLKREQN_SET(1));
 
-	/* 	ath_reg_rmw_set(PCIE_PLL_CONFIG_ADDRESS, PCIE_PLL_CONFIG_PLLPWD_SET(1)); */
+		ath_reg_rmw_set(PCIE_PLL_CONFIG_ADDRESS, PCIE_PLL_CONFIG_PLLPWD_SET(1));
 
-	/* 	ath_reg_rmw_set(RST_RESET_ADDRESS, RST_RESET_PCIE_RESET_SET(1)); */
-	/* 	ath_reg_rmw_set(RST_RESET_ADDRESS, RST_RESET_PCIE_PHY_RESET_SET(1)); */
+		ath_reg_rmw_set(RST_RESET_ADDRESS, RST_RESET_PCIE_RESET_SET(1));
+		ath_reg_rmw_set(RST_RESET_ADDRESS, RST_RESET_PCIE_PHY_RESET_SET(1));
 
-	/* 	ath_reg_rmw_clear(RST_CLKGAT_EN_ADDRESS, RST_CLKGAT_EN_PCIE_RC_SET(1)); */
+		ath_reg_rmw_clear(RST_CLKGAT_EN_ADDRESS, RST_CLKGAT_EN_PCIE_RC_SET(1));
 
-	/* 	PCI_INIT_RETURN; */
-	/* } else {  */
+		PCI_INIT_RETURN;
+	} else { 
 	 	 /* Honeybee -The PCIe reference clock frequency is being changed 
 	  	    to vary from 99.968MHz to 99.999MHz using SS modulation */
 		ath_reg_wr_nf(PCIE_PLL_DITHER_DIV_MAX_ADDRESS,
@@ -258,7 +258,7 @@ pci_init_board (void)
 		ath_reg_wr_nf(PCIE_PLL_DITHER_DIV_MIN_ADDRESS,
 			PCIE_PLL_DITHER_DIV_MIN_DIV_MIN_FRAC_SET(0x3f84)|
 			PCIE_PLL_DITHER_DIV_MIN_DIV_MIN_INT_SET(0x17));
-	/* }  */
+	} 
 #else 
 
 #if defined(CONFIG_MACH_QCA956x)
@@ -287,6 +287,26 @@ pci_init_board (void)
 
 #endif 
 
+#if defined(CONFIG_MACH_QCA956x) || defined(CONFIG_MACH_QCA953x)
+	prmsg("Power up PLL with outdiv = 0 then switch to 3\n");
+
+	ath_reg_wr(PCIE_DPLL3_ADDRESS, PCIE_DPLL3_LOCAL_PLL_PWD_SET(0x1));
+	ath_reg_rmw_clear(PCIE_PLL_CONFIG_ADDRESS, PCIE_PLL_CONFIG_PLLPWD_SET(1));
+	ath_reg_rmw_clear(PCIE_PLL_CONFIG_ADDRESS, PCIE_PLL_CONFIG_BYPASS_SET(1));
+	ath_reg_wr(PCIE_DPLL1_ADDRESS, PCIE_DPLL1_REFDIV_SET(0x1) |
+		PCIE_DPLL1_NINT_SET(0x18));
+	ath_reg_wr(PCIe_DPLL2_ADDRESS, PCIe_DPLL2_LOCAL_PLL_SET(0x1) |
+		PCIe_DPLL2_KD_SET(0x4) |
+		PCIe_DPLL2_PLL_PWD_SET(0x1) |
+		PCIe_DPLL2_PHASE_SHIFT_SET(0x6));
+
+	ath_reg_wr(PCIE_DPLL3_ADDRESS, PCIE_DPLL3_RESET);
+	ath_reg_wr(PCIe_DPLL2_ADDRESS, PCIe_DPLL2_LOCAL_PLL_SET(0x1) |
+		PCIe_DPLL2_KD_SET(0x4) |
+		PCIe_DPLL2_PLL_PWD_SET(0x1) |
+		PCIe_DPLL2_OUTDIV_SET(0x3) |
+		PCIe_DPLL2_PHASE_SHIFT_SET(0x6));
+#else
 	ath_reg_wr_nf(PCIE_PLL_CONFIG_ADDRESS,
 		PCIE_PLL_CONFIG_REFDIV_SET(1) |
 		PCIE_PLL_CONFIG_BYPASS_SET(1) |
@@ -296,6 +316,7 @@ pci_init_board (void)
 	ath_reg_rmw_clear(PCIE_PLL_CONFIG_ADDRESS, PCIE_PLL_CONFIG_PLLPWD_SET(1));
 	udelay(1000);
 	ath_reg_rmw_clear(PCIE_PLL_CONFIG_ADDRESS, PCIE_PLL_CONFIG_BYPASS_SET(1));
+#endif
 	udelay(1000);
 
 #if !defined(CONFIG_MACH_QCA956x)
@@ -354,46 +375,45 @@ pci_init_board (void)
 	 */
 	if (((ath_reg_rd(PCIE_RESET_ADDRESS)) & 0x1) == 0x0) {
 		prmsg("*** Warning *** : PCIe WLAN Module not found !!!\n");
+	} else {
+#ifndef COMPRESSED_UBOOT
+		/*
+		 * Now, configure for u-boot tools
+		 */
+
+		hose.first_busno = 0;
+		hose.last_busno = 0xff;
+
+		/* System space */
+		pci_set_region(	&hose.regions[0],
+				0x80000000,
+				0x00000000,
+				32 * 1024 * 1024,
+				PCI_REGION_MEM | PCI_REGION_MEMORY);
+
+		/* PCI memory space */
+		pci_set_region(	&hose.regions[1],
+				0x10000000,
+				0x10000000,
+				128 * 1024 * 1024,
+				PCI_REGION_MEM);
+
+		hose.region_count = 2;
+
+		pci_register_hose(&hose);
+
+		pci_set_ops(	&hose,
+				pci_hose_read_config_byte_via_dword,
+				pci_hose_read_config_word_via_dword,
+				ath_pci_read_config,
+				pci_hose_write_config_byte_via_dword,
+				pci_hose_write_config_word_via_dword,
+				ath_pci_write_config);
+#endif
 	}
 #endif
-
 #ifdef PCIE2_APP_ADDRESS
-	pci_rc2_init_board();
-#endif
-
-#ifndef COMPRESSED_UBOOT
-	/*
-	 * Now, configure for u-boot tools
-	 */
-
-	hose.first_busno = 0;
-	hose.last_busno = 0xff;
-
-	/* System space */
-	pci_set_region(	&hose.regions[0],
-			0x80000000,
-			0x00000000,
-			32 * 1024 * 1024,
-			PCI_REGION_MEM | PCI_REGION_MEMORY);
-
-	/* PCI memory space */
-	pci_set_region(	&hose.regions[1],
-			0x10000000,
-			0x10000000,
-			128 * 1024 * 1024,
-			PCI_REGION_MEM);
-
-	hose.region_count = 2;
-
-	pci_register_hose(&hose);
-
-	pci_set_ops(	&hose,
-			pci_hose_read_config_byte_via_dword,
-			pci_hose_read_config_word_via_dword,
-			ath_pci_read_config,
-			pci_hose_write_config_byte_via_dword,
-			pci_hose_write_config_word_via_dword,
-			ath_pci_write_config);
+        pci_rc2_init_board();
 #endif
 	plat_dev_init();
 #endif /* CONFIG_ATH_EMULATION */

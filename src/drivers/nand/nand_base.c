@@ -1421,7 +1421,7 @@ static int nand_read_oob (struct mtd_info *mtd, loff_t from, size_t len, size_t 
 		thislen = min_t(int, thislen, len);
 		this->read_buf(mtd, &buf[i], thislen);
 		i += thislen;
-
+			
 		/* Apply delay or wait for ready/busy pin
 		 * Do this before the AUTOINCR check, so no problems
 		 * arise if a chip which does auto increment
@@ -1459,6 +1459,7 @@ static int nand_read_oob (struct mtd_info *mtd, loff_t from, size_t len, size_t 
 
 	/* Return happy */
 	*retlen = len;
+	red_led_on();
 	return 0;
 }
 
@@ -1701,7 +1702,11 @@ static int nand_write_ecc (struct mtd_info *mtd, loff_t to, size_t len,
 
 		/* Increment page address */
 		page++;
-
+		printf("written %d", written);
+		if((written % 100) == 0){
+			fdfdfgreen_led_toggle();
+			red_led_toggle();
+		}
 		/* Have we hit a block boundary ? Then we have to verify and
 		 * if verify is ok, we have to setup the oob buffer for
 		 * the next pages.
@@ -1750,6 +1755,9 @@ cmp:
 out:
 	/* Deselect and wake up anyone waiting on the device */
 	nand_release_device(mtd);
+
+	green_led_off();
+	red_led_off();
 
 	return ret;
 }
@@ -2179,7 +2187,9 @@ int nand_erase_nand (struct mtd_info *mtd, struct erase_info *instr, int allowbb
 		/* Increment page address and decrement length */
 		len -= (1 << this->phys_erase_shift);
 		page += pages_per_block;
-
+		if((page % 10) == 0){
+			red_led_toggle();
+		}
 		/* Check, if we cross a chip boundary */
 		if (len && !(page & this->pagemask)) {
 			chipnr++;
@@ -2198,7 +2208,8 @@ erase_exit:
 
 	/* Deselect and wake up anyone waiting on the device */
 	nand_release_device(mtd);
-
+	
+	red_led_on();
 	/* Return more or less happy */
 	return ret;
 }

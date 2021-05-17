@@ -153,6 +153,7 @@ flash_write (char *src, ulong addr, ulong cnt)
 	if (!info_first || !info_last) {
 		return (ERR_INVAL);
 	}
+
 	for (info = info_first; info <= info_last; ++info) {
 		ulong b_end = info->start[0] + info->size;	/* bank end addr */
 		short s_end = info->sector_count - 1;
@@ -166,13 +167,9 @@ flash_write (char *src, ulong addr, ulong cnt)
 		}
 	}
 
-	green_led_on();
-	red_led_on();
-
 	/* finally write data to flash */
 	for (info = info_first; info <= info_last && cnt>0; ++info) {
 		ulong len;
-
 		len = info->start[0] + info->size - addr;
 		if (len > cnt)
 			len = cnt;
@@ -182,11 +179,8 @@ flash_write (char *src, ulong addr, ulong cnt)
 		cnt  -= len;
 		addr += len;
 		src  += len;
+		
 	}
-
-	green_led_off();
-	red_led_off();
-
 	return (ERR_OK);
 #endif /* CONFIG_SPD823TS */
 }

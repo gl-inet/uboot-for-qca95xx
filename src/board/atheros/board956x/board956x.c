@@ -22,7 +22,7 @@
 #include <config.h>
 #include <version.h>
 #include <atheros.h>
-
+#include "ar7240_soc.h"
 extern int ath_ddr_initial_config(uint32_t refresh);
 extern int ath_ddr_find_size(void);
 
@@ -171,3 +171,309 @@ int	checkboard(args)
 	board_str(CONFIG_BOARD_NAME);
 	return 0;
 }
+
+#if defined(GPIO_RESET)
+int reset_button_status(void)
+{
+	unsigned int gpio;
+
+        gpio = ath_reg_rd(AR7240_GPIO_IN);
+
+	if (gpio & (1 << GPIO_RESET)) {
+		return(0);
+	} else {
+		return(1);
+	}
+}
+#else
+int reset_button_status(){return 1;}
+#endif
+
+#if defined(GPIO_LED_STATUS)
+void status_led_on(void)
+{
+	unsigned int led_GPIO_OE  = ath_reg_rd(AR7240_GPIO_OE);
+        if(led_GPIO_OE & (1<<GPIO_LED_STATUS))
+        {
+                led_GPIO_OE  &= ~(1<<GPIO_LED_STATUS);
+                ath_reg_wr(AR7240_GPIO_OE,led_GPIO_OE);
+        }
+        ath_reg_wr_nf(AR7240_GPIO_CLEAR, 1<<GPIO_LED_STATUS);
+}
+
+void status_led_off(void)
+{
+        unsigned int led_GPIO_OE  = ath_reg_rd(AR7240_GPIO_OE);
+        if(led_GPIO_OE & (1<<GPIO_LED_STATUS))
+        {
+                led_GPIO_OE  &= ~(1<<GPIO_LED_STATUS);
+                ath_reg_wr(AR7240_GPIO_OE,led_GPIO_OE);
+        }
+        ath_reg_wr_nf(AR7240_GPIO_SET, 1<<GPIO_LED_STATUS);
+}
+
+void status_led_toggle(void)
+{
+        if (ath_reg_rd(AR7240_GPIO_OUT) & (1<<GPIO_LED_STATUS))
+                status_led_on();
+        else
+                status_led_off();
+}
+#else
+void status_led_on(){}
+void status_led_off(){}
+void status_led_toggle(){}
+#endif
+
+#if defined(GPIO_LED_GREEN)
+void green_led_on(void)
+{
+        unsigned int led_GPIO_OE  = ath_reg_rd(AR7240_GPIO_OE);
+        if(led_GPIO_OE & (1<<GPIO_LED_GREEN))
+        {       
+                led_GPIO_OE  &= ~(1<<GPIO_LED_GREEN);
+                ath_reg_wr(AR7240_GPIO_OE,led_GPIO_OE);
+        }
+        ath_reg_wr_nf(AR7240_GPIO_CLEAR,1<< GPIO_LED_GREEN);
+}
+
+void green_led_off(void)
+{
+        unsigned int led_GPIO_OE  = ath_reg_rd(AR7240_GPIO_OE);
+        if(led_GPIO_OE & (1<<GPIO_LED_GREEN))
+        {
+                led_GPIO_OE  &= ~(1<<GPIO_LED_GREEN);
+                ath_reg_wr(AR7240_GPIO_OE,led_GPIO_OE);
+        }
+        ath_reg_wr_nf(AR7240_GPIO_SET, 1<<GPIO_LED_GREEN);
+}
+
+void green_led_toggle(void)
+{
+        if (ath_reg_rd(AR7240_GPIO_OUT) & (1<<GPIO_LED_GREEN))
+                green_led_on();
+        else
+                green_led_off();
+}
+#else
+void green_led_on(){}
+void green_led_off(){}
+void green_led_toggle(){}
+#endif
+
+#if defined(GPIO_LED_RED)
+void red_led_off(void)
+{
+        unsigned int led_GPIO_OE  = ath_reg_rd(AR7240_GPIO_OE);
+        if(led_GPIO_OE & (1<<GPIO_LED_RED))
+        {
+                led_GPIO_OE  &= ~(1<<GPIO_LED_RED);
+                ath_reg_wr(AR7240_GPIO_OE,led_GPIO_OE);
+        }
+        ath_reg_wr_nf(AR7240_GPIO_CLEAR, 1<<GPIO_LED_RED);
+}
+
+void red_led_on(void)
+{
+        unsigned int led_GPIO_OE  = ath_reg_rd(AR7240_GPIO_OE);
+        if(led_GPIO_OE & (1<<GPIO_LED_RED))
+        {       
+                led_GPIO_OE  &= ~(1<<GPIO_LED_RED);
+                ath_reg_wr(AR7240_GPIO_OE,led_GPIO_OE);
+        }
+        ath_reg_wr_nf(AR7240_GPIO_SET, 1<<GPIO_LED_RED);
+}
+
+void red_led_toggle(void)
+{
+        if (ath_reg_rd(AR7240_GPIO_OUT) & (1<<GPIO_LED_RED))
+                red_led_off();
+        else
+                red_led_on();
+}
+#else
+void red_led_on(){}
+void red_led_off(){}
+void red_led_toggle(){}
+#endif
+
+#if defined(GPIO_LED_LAN)
+void lan_led_on(void)
+{
+        unsigned int led_GPIO_OE  = ath_reg_rd(AR7240_GPIO_OE);
+        if(led_GPIO_OE & (1<<GPIO_LED_LAN))
+        {
+                led_GPIO_OE  &= ~(1<<GPIO_LED_LAN);
+                ath_reg_wr(AR7240_GPIO_OE,led_GPIO_OE);
+        }
+        ath_reg_wr_nf(AR7240_GPIO_CLEAR, 1<<GPIO_LED_LAN);
+}
+
+void lan_led_off(void)
+{
+        unsigned int led_GPIO_OE  = ath_reg_rd(AR7240_GPIO_OE);
+        if(led_GPIO_OE & (1<<GPIO_LED_LAN))
+        {
+                led_GPIO_OE  &= ~(1<<GPIO_LED_LAN);
+                ath_reg_wr(AR7240_GPIO_OE,led_GPIO_OE);
+        }
+        ath_reg_wr_nf(AR7240_GPIO_SET, 1<<GPIO_LED_LAN);
+}
+
+void lan_led_toggle(void)
+{
+        if (ath_reg_rd(AR7240_GPIO_OUT) & (1<<GPIO_LED_LAN))
+                red_led_on();
+        else
+                red_led_off();
+}
+#else
+void lan_led_on(){}
+void lan_led_off(){}
+void lan_led_toggle(){}
+#endif
+
+#if defined(GPIO_LED_4G)
+void g4_led_on(void)
+{
+	 unsigned int led_GPIO_OE  = ath_reg_rd(AR7240_GPIO_OE);
+        if(led_GPIO_OE & (1<<GPIO_LED_4G))
+        {
+                led_GPIO_OE  &= ~(1<<GPIO_LED_4G);
+                ath_reg_wr(AR7240_GPIO_OE,led_GPIO_OE);
+        }
+        ath_reg_wr_nf(AR7240_GPIO_CLEAR, 1<<GPIO_LED_4G);
+}
+
+void g4_led_off(void)
+{
+         unsigned int led_GPIO_OE  = ath_reg_rd(AR7240_GPIO_OE);
+        if(led_GPIO_OE & (1<<GPIO_LED_4G))
+        {
+                led_GPIO_OE  &= ~(1<<GPIO_LED_4G);
+                ath_reg_wr(AR7240_GPIO_OE,led_GPIO_OE);
+        }
+        ath_reg_wr_nf(AR7240_GPIO_SET, 1<<GPIO_LED_4G);
+}
+
+void g4_led_toggle(void)
+{
+        if (ath_reg_rd(AR7240_GPIO_OUT) & (1<<GPIO_LED_4G))
+                red_led_on();
+        else
+                red_led_off();
+}
+#else
+void g4_led_on(){}
+void g4_led_off(){}
+void g4_led_toggle(){}
+#endif
+void all_led_on(void)
+{
+        status_led_on();
+        green_led_on();
+        red_led_on();
+	lan_led_on();
+	g4_led_on();
+}
+
+void all_led_off(void)
+{
+        status_led_off();
+        green_led_off();
+        red_led_off();
+	lan_led_off();
+	g4_led_off();
+}
+
+
+void gpio17_select_out()
+{
+unsigned int tmp=0;
+tmp = ath_reg_rd(AR7240_GPIO_FUNC4);
+ath_reg_wr_nf(AR7240_GPIO_FUNC4, (tmp & 0x00ff) );
+
+}
+#if defined(GPIO_4G1_POWER)  || defined(GPIO_4G2_POWER) || defined(GPIO_WATCHDOG1) || defined(GPIO_SIM_SELECT)
+/*void get_gpio_status()
+{
+	unsigned int gpio_oe = ath_reg_rd(AR7240_GPIO_OE);
+	unsigned int gpio_in = ath_reg_rd(AR7240_GPIO_IN);
+	unsigned int gpio_out = ath_reg_rd(AR7240_GPIO_OUT);
+	printf("Function:%s Line:%d gpio_oe=%x\n",__func__, __LINE__, gpio_oe);
+	printf("Function:%s Line:%d gpio_in=%x\n",__func__, __LINE__, gpio_in);
+	printf("Function:%s Line:%d gpio_out=%x\n",__func__, __LINE__, gpio_out);
+}*/
+void set_gpio_value(char gpionum,char value)
+{
+	//printf("Function:%s Line:%d GPIO Number:%d GPIO Value:%d\n", __func__, __LINE__, gpionum,value);
+	unsigned int led_GPIO_OE  = ath_reg_rd(AR7240_GPIO_OE);
+	//printf("Function:%s Line:%d ath_reg_rd(AR7240_GPIO_OE)=%x\n",__func__, __LINE__, led_GPIO_OE);
+	if(led_GPIO_OE & (1<<gpionum))
+	{
+		led_GPIO_OE  &= ~(1<<gpionum);
+		ath_reg_wr(AR7240_GPIO_OE,led_GPIO_OE);//set output
+	}
+	if(value == 0)
+		ath_reg_wr_nf(AR7240_GPIO_CLEAR, 1<<gpionum);
+	else
+		ath_reg_wr_nf(AR7240_GPIO_SET, 1<<gpionum);
+	//printf("Function:%s Line:%d ath_reg_rd(AR7240_GPIO_OE)=%x\n",__func__, __LINE__, ath_reg_rd(AR7240_GPIO_OE));
+}
+#endif
+
+#if defined(GPIO_WATCHDOG2)
+void disable_jtag(void)
+{
+	ath_reg_wr_nf(GPIO_FUNCTION_ADDRESS, ath_reg_rd(GPIO_FUNCTION_ADDRESS) | GPIO_FUNCTION_DISABLE_JTAG_MASK);
+}
+
+void gpio_watchdog_up()
+{	
+	unsigned int led_GPIO_OE  = ath_reg_rd(AR7240_GPIO_OE);
+	if(led_GPIO_OE & (1<<GPIO_WATCHDOG2))
+	{
+		led_GPIO_OE  &= ~(1<<GPIO_WATCHDOG2);
+		ath_reg_wr(AR7240_GPIO_OE,led_GPIO_OE);
+	}
+	ath_reg_wr_nf(AR7240_GPIO_SET, 1<<GPIO_WATCHDOG2);
+}
+
+void gpio_watchdog_down()
+{
+	unsigned int led_GPIO_OE  = ath_reg_rd(AR7240_GPIO_OE);
+	if(led_GPIO_OE & (1<<GPIO_WATCHDOG2))
+	{
+		led_GPIO_OE  &= ~(1<<GPIO_WATCHDOG2);
+		ath_reg_wr(AR7240_GPIO_OE,led_GPIO_OE);
+	}
+	ath_reg_wr_nf(AR7240_GPIO_CLEAR, 1<<GPIO_WATCHDOG2);
+}
+
+void gpio_watchdog_toggle(int count)
+{
+	disable_jtag();
+	while(count--)
+	{
+		gpio_watchdog_up();
+		udelay(10000);
+		gpio_watchdog_down();
+		udelay(10000);
+	}
+}
+#endif
+
+#define GPIO_SWITCH_LOAD 0x3 //GPIO 0 and 1
+unsigned  int switch_boot_load()
+{
+  char val1=0,val2=0;
+  val1 =ath_reg_rd(AR7240_GPIO_IN) & GPIO_SWITCH_LOAD;
+        udelay(20000);//20ms
+  val2 =ath_reg_rd(AR7240_GPIO_IN) & GPIO_SWITCH_LOAD;
+  if(val1 == val2) return val1;
+  else{
+        printf("is default boot device \n");
+        return 0;
+        }
+}
+

@@ -273,6 +273,8 @@ void init_s17_lpbk(void)
 #ifdef DEBUG
     printf("s17 phy0 register value 0x%08x\n", rddata);
 #endif
+
+#ifndef CONFIG_MACH_QCA955x
     // power down other phys
 #ifdef ATH_S17_MAC0_SGMII
     phy_reg_write(0, 0x0, 0x0, 0x8800);
@@ -282,6 +284,7 @@ void init_s17_lpbk(void)
     phy_reg_write(0, 0x1, 0x0, 0x8800);
     phy_reg_write(0, 0x2, 0x0, 0x8800);
     phy_reg_write(0, 0x3, 0x0, 0x8800);
+#endif
     /* For 100M waveform */
     phy_reg_write(0, phyAddr, 0x1d, 0x18);
     phy_reg_write(0, phyAddr, 0x1e, 0x02ea);

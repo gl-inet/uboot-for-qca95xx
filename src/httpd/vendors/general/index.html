@@ -5,14 +5,17 @@
 		<title>Firmware update</title>
 		<link rel="stylesheet" href="style.css">
 	</head>
+
 	<body>
 		<div id="m">
 			<h1>FIRMWARE UPDATE</h1>
 			<p>You are going to update <strong>firmware</strong> on the device.<br>Please, choose file from your local hard drive and click <strong>Update firmware</strong> button.</p>
-			<p>For <b>NAND</b> flash firmware (*.img), please use this form.</p>
-			<form method="post" enctype="multipart/form-data"><input type="file" name="nand_firmware"><input type="submit" value="Update nand firmware"></form>
-			<p>For <b>NOR</b> flash firmware (*.bin), please use this form.</p>
-			<form method="post" enctype="multipart/form-data"><input type="file" name="nor__firmware"><input type="submit" value="Update nor  firmware"></form>
+
+			<form method="post" enctype="multipart/form-data">
+				<input type="file" name="gl_firmware">
+				<input type="submit" value="Update gl-inet firmware"><br>
+			</form>
+
 			<div class="i w">
 				<strong>WARNINGS</strong>
 				<ul>
@@ -23,5 +26,6 @@
 			</div>
 		</div>
 		<div id="f">You can find more information about this project on <a href="https://github.com/pepe2k/u-boot_mod" target="_blank">GitHub</a></div>
+        <div id="f">uboot2.0 version:19.11.12</div>
 	</body>
 </html>

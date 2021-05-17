@@ -545,7 +545,7 @@ _CHANGE_TAPS:
 	li	t1,	0xfa5de83f		// 4 Row Address Bits, 4 Column Address Bits, 2 BA bits
 	sw	t1,	0x002c(t0)		// PERF_MASK_ADDR_0_ADDRESS
 
-#ifdef CONFIG_MACH_QCA953x
+#if defined(CONFIG_MACH_QCA953x) || defined(CONFIG_MACH_QCA956x)
 	li	t1,	0x0000ffff
 	sw	t1,	0x0070(t0)		// PERF_COMP_AHB_GE0_1_ADDRESS
 

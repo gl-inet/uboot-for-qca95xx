@@ -103,7 +103,8 @@
 #define S17_PHY_LINK_INTRS			     (PHY_LINK_UP | PHY_LINK_DOWN | PHY_LINK_DUPLEX_CHANGE | PHY_LINK_SPEED_CHANGE)
 
 //defines from athrs17_phy.h driver
-#define S17C_DEVICEID					0x1302
+#define S17C_V1_DEVICEID					0x1301
+#define S17C_V2_DEVICEID					0x1302
 
 #define S17_MASK_CTRL_REG               0x0000
 #define S17_P0PAD_MODE_REG              0x0004
