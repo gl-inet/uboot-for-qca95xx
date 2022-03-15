@@ -5,12 +5,14 @@ The source code in the repository is compiled under the environment of OpenWrt-1
 It depends on OpenWRT toolchain. We assume that you have compiled firmware from buildroot. Downloading this repo to your OpenWRT buildroot source tree.
 
 ```
+$ cd openwrt-buildroot
+$ git checkout openwrt-19.07
 $ cd openwrt-buildroot/package  
 $ git clone https://github.com/gl-inet/uboot-for-qca95xx.git
 $ cd ../
 ```
 ### Compile
-**Sealect AR71XX NAND target**
+**Sealect AR71XX NAND target** ( Must choose Atheros AR7xxx/AR9xxx )
 
 ```
 Target System (Atheros AR7xxx/AR9xxx)  ---> 
