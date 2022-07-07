@@ -393,6 +393,22 @@ static int ath_init_gpio()
 	ath_reg_wr_nf(AR7240_GPIO_BASE+0x10,(0x1<<0)|(0x1<<4)|(0x1<<14)|(0x1<<15)|(0x1<<16)|(0x1<<17));
 	//set all led to off
 	ath_reg_wr_nf(AR7240_GPIO_BASE+0xc,(0x1<<1)|(0x1<<10)|(0x1<<12)|(0x1<<13));
+#elif S200_GPIO
+	unsigned int gpio_oe  = ath_reg_rd(AR7240_GPIO_OE);
+	unsigned int gpio_fun1  = ath_reg_rd(AR7240_GPIO_BASE+0x30);
+	gpio_fun1 &= ~0xff;//GPIO4
+	ath_reg_wr_nf(AR7240_GPIO_BASE+0x30,gpio_fun1);//GPIO4 seting to GPIO functionality
+
+	unsigned int gpio_fun4  = ath_reg_rd(AR7240_GPIO_BASE+0x3C);
+	gpio_fun4 &= ~0xff00;//GPIO17
+    ath_reg_wr_nf(AR7240_GPIO_BASE+0x3C,gpio_fun4);//GPIO17 seting to GPIO functionality
+
+	gpio_oe &= ~((0x1<<1)|(0x1<<2)|(0x1<<4)|(0x1<<11)|(0x1<<12)|(0x1<<13)|(0x1<<17));
+	gpio_oe |= ((0x1<<3)|(0x1<<14));
+	ath_reg_wr_nf(AR7240_GPIO_OE,gpio_oe);
+    ath_reg_wr_nf(AR7240_GPIO_BASE+0xc,(0x1<<11)|(0x1<<17)); // out high
+	ath_reg_wr_nf(AR7240_GPIO_BASE+0x10,(0x1<<4)|(0x1<<12)|(0x1<<1)|(0x1<<2));
+#elif
 #endif
 }
 

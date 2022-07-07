@@ -1,0 +1,10 @@
+--- package/qca-legacy-uboot/Makefile	2014-09-04 15:39:59.722811971 +0800
++++ package/qca-legacy-uboot/Makefile	2014-09-04 15:26:34.176115115 +0800
+@@ -107,5 +107,7 @@
+ $(eval $(call Package/qca-legacy-uboot/nor,ap147-16M))
+ $(eval $(call Package/qca-legacy-uboot/nor,ap151-8M))
+ $(eval $(call Package/qca-legacy-uboot/nor,ap151-16M))
++$(eval $(call Package/qca-legacy-uboot/nor,ap151-32M))
+ $(eval $(call Package/qca-legacy-uboot/nor,ap152-8M))
+ $(eval $(call Package/qca-legacy-uboot/nor,ap152-16M))
++$(eval $(call Package/qca-legacy-uboot/nor,ap152-32M))

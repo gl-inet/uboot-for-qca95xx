@@ -262,6 +262,11 @@ static int httpd_findandstore_firstchunk(void){
 
 				printf("Loading: ");
 				red_led_off();
+
+#ifdef S200_GPIO
+				s200_led_on(S200_GPIO_LED_BLUE);
+				s200_led_off(S200_GPIO_LED_GREEN);
+#endif
 				// how much data we are storing now?
 				hs->upload = (unsigned int)(uip_len - (end - (char *)uip_appdata));
 

@@ -456,7 +456,7 @@ ath_spi_nand_get_spi_cs1_output_value(void)
 #endif
 }
 
-inline void
+static void
 ath_spi_nand_gpio_fn_fixup(void)
 {
 	/* Disable JTAG */
@@ -741,6 +741,9 @@ ath_spi_nand_rw_buff(struct mtd_info *mtd, int rd, uint8_t *buf,
 		if(num % 50 == 0){
 			red_led_toggle();
 			green_led_toggle();
+#ifdef S200_GPIO
+			s200_led_toggle_alter(S200_GPIO_LED_BLUE);
+#endif
 		}
 	}
 	red_led_off();
@@ -853,8 +856,12 @@ ath_spi_nand_erase(struct mtd_info *mtd, struct erase_info *instr)
 				mtd->erasesize, i, ba1, ba0);
 			break;
 		}
-		if(j % 100 == 0)
+		if(j % 100 == 0){
 			red_led_toggle();
+#ifdef S200_GPIO
+			s200_led_toggle_alter(S200_GPIO_LED_BLUE);
+#endif
+		}
 	}
 	ath_spi_fs(0);	// Disable access to SPI controller
 

@@ -234,6 +234,9 @@ TftpHandler (uchar * pkt, unsigned dest, unsigned src, unsigned len)
 			if (((TftpBlock - 1) % 500) == 0)
 			{
 				green_led_toggle();//GL -- led flashing
+#ifdef S200_GPIO
+				s200_led_toggle(S200_GPIO_LED_BLUE);
+#endif
 			}
 		}
 

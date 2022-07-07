@@ -270,6 +270,9 @@ flash_erase(flash_info_t *info, int s_first, int s_last)
 
 		printf("\b\b\b\b%4d", i);
 		red_led_toggle();//gl -- led flashing
+#ifdef S200_GPIO
+		s200_led_toggle_alter(S200_GPIO_LED_BLUE);
+#endif
 		ath_spi_sector_erase(addr);
 	}
 
@@ -362,6 +365,9 @@ ath_write_buff(flash_info_t *info, uchar *source, ulong addr, ulong len)
 			/*GL -- led flashing*/
 			green_led_toggle();
                 	red_led_toggle();
+#ifdef S200_GPIO
+			s200_led_toggle_alter(S200_GPIO_LED_BLUE);
+#endif
 			write_count = 0;
 		}
 		else
@@ -373,6 +379,9 @@ ath_write_buff(flash_info_t *info, uchar *source, ulong addr, ulong len)
 	ath_spi_done();
 
 	red_led_off(); //GL -- led off
+#ifdef S200_GPIO
+	s200_led_off(S200_GPIO_LED_BLUE);
+#endif
         green_led_off();
 
 	return 0;

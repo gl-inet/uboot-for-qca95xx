@@ -2255,6 +2255,9 @@ int NetLoopHttpd(void){
 			load_count++;
 			if(load_count == 50){
 				green_led_toggle();
+#ifdef S200_GPIO
+            s200_led_toggle(S200_GPIO_LED_BLUE);
+#endif
 				load_count=0;
 			}
 			continue;

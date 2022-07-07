@@ -121,7 +121,7 @@ static int display_banner(void)
 
 	//printf ("\n\n%s\n\n", version_string);
 	//printf ("\n\n%s (%s)\n\n",U_BOOT_VERSION,__TIMESTAMP__);
-	printf ("\n\n%s (%s)\n\n",U_BOOT_VERSION,"Fri May 17 09:44:06 2019");
+	printf ("\n\n%s (%s)\n\n",U_BOOT_VERSION,"Sat Aug 14 08:53:11 UTC 2021");
 
 	return (0);
 }
@@ -323,8 +323,13 @@ void board_init_f(ulong bootflag)
 
 void board_init_r (gd_t *id, ulong dest_addr)
 {
+//#ifndef CONFIG_XE300 //XE300 not change status led
 #ifndef CONFIG_XE300 //XE300 not change status led
 	status_led_on();//GL -- led on
+#endif
+#ifdef S200_GPIO
+	s200_led_on(S200_GPIO_LED_BLUE);
+	s200_led_off(S200_GPIO_LED_GREEN);
 #endif
 	cmd_tbl_t *cmdtp;
 	ulong size;

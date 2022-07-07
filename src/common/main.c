@@ -578,11 +578,19 @@ void main_loop (void)
 
                 while(reset_button_status() && counter < CONFIG_DELAY_TO_AUTORUN_HTTPD){
                         // LED ON and wait 0,15s
+#ifdef S200_GPIO
+						s200_led_off(S200_GPIO_LED_BLUE);
+#else
                         red_led_on();
+#endif
                         udelay(150000);
 
                         // LED OFF and wait 0,85s
+#ifdef S200_GPIO
+						s200_led_on(S200_GPIO_LED_BLUE);
+#else
                         red_led_off();
+#endif
                         udelay(850000);
 
                         counter++;
@@ -593,7 +601,12 @@ void main_loop (void)
 
                         //turn on Red LED to show httpd started
                         if(counter==CONFIG_DELAY_TO_AUTORUN_HTTPD){
+#ifdef S200_GPIO
+                                s200_led_off(S200_GPIO_LED_BLUE);
+                                s200_led_on(S200_GPIO_LED_GREEN);
+#else
                                 green_led_on();
+#endif
                         }
 
                         if(!reset_button_status()){
@@ -705,6 +718,8 @@ void main_loop (void)
 #ifdef GPIO_WATCHDOG2
 		gpio_watchdog_toggle(5); //start x1200 watchdog
 #endif
+
+		eth_halt(); //loading the kernel may crash if eth not halt
 
         select_boot_dev();
         if(nand_boot_failed){

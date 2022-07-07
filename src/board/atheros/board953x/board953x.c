@@ -436,3 +436,52 @@ unsigned  int switch_boot_load()
 	return 0;
 	}
 }
+
+/*
+	gpionum: gpio
+*/
+#if defined(S200_GPIO)
+void s200_led_off(char gpionum){
+	unsigned int led_GPIO_OE  = ath_reg_rd(AR7240_GPIO_OE);
+	if(led_GPIO_OE & (1<<gpionum))
+	{
+		led_GPIO_OE  &= ~(1<<gpionum);
+		ath_reg_wr(AR7240_GPIO_OE,led_GPIO_OE);
+	}
+	ath_reg_wr_nf(AR7240_GPIO_CLEAR, 1<<gpionum);
+}
+
+void s200_led_on(char gpionum){
+	unsigned int led_GPIO_OE  = ath_reg_rd(AR7240_GPIO_OE);
+	if(led_GPIO_OE & (1<<gpionum))
+	{
+		led_GPIO_OE  &= ~(1<<gpionum);
+		ath_reg_wr(AR7240_GPIO_OE,led_GPIO_OE);
+	}
+	ath_reg_wr_nf(AR7240_GPIO_SET, 1<<gpionum);
+}
+
+void s200_led_toggle(char gpionum)
+{
+	if (ath_reg_rd(AR7240_GPIO_OUT) & (1<<gpionum))
+		s200_led_off(gpionum);
+	else
+		s200_led_on(gpionum);
+}
+
+void s200_led_toggle_alter(char gpionum)
+{
+	if (ath_reg_rd(AR7240_GPIO_OUT) & (1<<gpionum)){
+		s200_led_off(S200_GPIO_LED_BLUE);
+		s200_led_on(S200_GPIO_LED_ORANGE);
+	}
+	else{
+		s200_led_on(S200_GPIO_LED_BLUE);
+		s200_led_off(S200_GPIO_LED_ORANGE);
+	}
+}
+#else
+void s200_led_on(){}
+void s200_led_off(){}
+void s200_led_toggle(){}
+#endif
